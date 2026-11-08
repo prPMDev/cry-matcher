@@ -21,18 +21,18 @@ When a baby cries, parents guess: hungry, tired, needs a burp? Some parents beli
 | Large pretrained audio models (e.g. transformer-based) | Rejected for v1. Too heavy to run well in a phone browser. |
 | **Small pretrained model, on device** | **Chosen.** YAMNet (Google): trained on AudioSet, which includes a "baby cry" class. Runs in the browser with TensorFlow.js. No training data needed. |
 
-Matching is deliberately simple: average the sound "fingerprints" of your clips per sound, then pick the nearest one. Simple first, so the log can show whether anything more is worth building.
+Matching is deliberately simple: average the sound "fingerprints" of your clips per need, then pick the nearest one. Simple first, so the log can show whether anything more is worth building.
 
 ## How it works
 
 ```mermaid
-flowchart LR
-    A[Add 3+ reference clips<br/>per sound: Sound 1 to 5] --> B[Record a new cry]
+flowchart TD
+    A[Add 3+ reference clips<br/>per need: Hungry, Tired, ...] --> B[Record a new cry]
     B --> C{Crying heard?}
     C -- no --> W[Warn: result may mean nothing]
     C -- yes --> D[YAMNet fingerprint<br/>on the phone]
     W --> D
-    D --> E[Nearest sound<br/>+ score per sound]
+    D --> E[Closest need<br/>+ confidence]
     E --> F[Parent taps<br/>what calmed the baby]
     F --> G[Right / wrong log]
     G --> H[Score vs chance]
@@ -49,21 +49,31 @@ flowchart TB
 
 ## Features
 
-- Five neutral sounds (Sound 1 to Sound 5). Rename each to what you think it means.
-- Record in the app or pick a recording.
-- Closest match with a score per sound and a low-confidence warning.
-- One tap to log what actually worked; "Not sure" does not count.
-- Score: right of total, per sound, next to chance.
+- Four tabs: **Match**, **Needs**, **Results**, **Settings**. One job per screen.
+- Default needs: Hungry, Tired, Burp or gas, Discomfort, Pain. Rename, add (up to 8) or remove.
+- Record in the app or upload a recording from the phone's recorder app.
+- Result card: most likely need, confidence, next closest, and plain warnings.
+- "What helped?" chips log right or wrong in one tap; "Not sure" does not count.
+- Score card: right of total next to chance, plus a per-need view. No tables.
 - Self-check: how well your reference clips separate.
+- 3-step first-use guide, tips, and a light, dark or auto theme.
 - Backup and restore in one file; results as CSV.
-- Works offline after the first visit. Add to Home screen.
+- Works offline after the first visit. Add to Home screen on Android.
+
+## Works on
+
+| Device | Status |
+| --- | --- |
+| Android phone, Chrome | Main target. Tested. |
+| Laptop, Chrome or Edge | Should work. Side navigation and two-column layout. Laptop microphone not tested yet. |
+| Other browsers | Not tested. |
 
 ## Quick start (Android)
 
 1. Open the website link (in the About box) in Chrome and allow the microphone.
-2. Add 3 or more clips to at least 2 sounds.
-3. When the baby cries, tap **Record**.
-4. When you know what worked, tap it. Watch the score.
+2. In **Needs**, add 3 or more clips to at least 2 needs.
+3. When the baby cries, open **Match** and tap the big button.
+4. When you know what worked, tap it under **What helped?**. Watch **Results**.
 
 ## Privacy
 

@@ -1,12 +1,12 @@
 {
  "name": "Cry Matcher",
  "short_name": "Cry Matcher",
- "description": "Private cry sound matcher. Clips stay on this phone.",
+ "description": "Private cry sound matcher. Clips stay on this device.",
  "start_url": "./",
  "scope": "./",
  "display": "standalone",
  "orientation": "portrait",
- "background_color": "#eef2f5",
+ "background_color": "#f6f9fc",
  "theme_color": "#19657f",
  "icons": [
   {
