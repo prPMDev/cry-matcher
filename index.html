@@ -113,6 +113,21 @@ footer { display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
 .icon { width: 20px; height: 20px; fill: currentColor; }
 body.no-mic .needs-mic { display: none !important; }
 body:not(.no-mic) .no-mic-only { display: none !important; }
+.answer { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 14px; }
+.answer .row > button { flex: 1 1 88px; min-height: 48px; }
+.answer button.on { background: var(--accent); color: var(--accent-ink) !important; border-color: transparent; }
+.answer .q { font-weight: 700; }
+.check { display: flex; gap: 10px; align-items: center; font-size: 15px; min-height: 44px; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); }
+.big { font: 750 34px/1.1 var(--f-display); font-variant-numeric: tabular-nums; }
+.log { display: grid; gap: 6px; }
+.logrow { display: grid; grid-template-columns: 1fr auto 44px; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 6px; }
+.logrow .when { font-size: 13px; color: var(--muted); }
+.logrow select { font: 600 15px var(--f-body); min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); padding: 0 8px; }
+.mark { font-weight: 700; } .mark.ok { color: var(--s-eairh); } .mark.bad { color: var(--bad); }
+.logrow button { width: 44px; min-height: 44px; padding: 0; }
+.logrow button.arm { background: var(--bad); color: #fff; font-size: 12px; }
+th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; padding-bottom: 4px; } th:last-child { text-align: right; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -145,8 +160,24 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
       <p class="note" id="resultWarn" hidden></p>
       <div class="bars" id="bars"></div>
       <div class="row"><button type="button" id="playMatch">Play this clip</button></div>
-      <div class="saveas"><span class="small muted">You know what it was? Add this clip to a sound:</span>
-        <div class="row" id="saveAs"></div></div>
+      <div class="answer">
+        <span class="q">What calmed the baby? Tap it when you know.</span>
+        <div class="row" id="answerRow"></div>
+        <label class="check"><input type="checkbox" id="keepAudio"> Keep this recording with the result</label>
+        <p class="small" id="answerStatus" aria-live="polite"></p>
+        <button type="button" id="addRef" hidden></button>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="logTitle">
+    <div class="head"><h2 id="logTitle">Your results</h2>
+      <p class="small muted">Each match is saved here. Tap what calmed the baby, now or later. The page counts right and wrong. It does not learn from this.</p></div>
+    <div class="card">
+      <div id="scoreOut"></div>
+      <div class="log" id="logList"></div>
+      <button type="button" id="moreLog" hidden>Show all results</button>
+      <button type="button" id="csvBtn">Export results as CSV</button>
     </div>
   </section>
 
@@ -167,10 +198,10 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
     <div class="card">
       <p id="storeInfo" class="small">Reading storage.</p>
       <div class="row">
-        <button type="button" id="exportBtn">Export all clips</button>
-        <label class="btn">Import clips<input type="file" accept=".json,application/json" id="importFile"></label>
+        <button type="button" id="exportBtn">Export all data</button>
+        <label class="btn">Import data<input type="file" accept=".json,application/json" id="importFile"></label>
       </div>
-      <p class="small muted" id="backupStatus" aria-live="polite">Clearing Chrome data for this site deletes the clips. Export makes one file you can keep.</p>
+      <p class="small muted" id="backupStatus" aria-live="polite">Clearing Chrome data for this site deletes the clips. Export makes one file with your clips and results.</p>
     </div>
   </section>
 
@@ -197,17 +228,20 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
   function openDB() {
     return new Promise(function (res, rej) {
       try {
-        var r = indexedDB.open("cry-matcher", 1);
-        r.onupgradeneeded = function () { r.result.createObjectStore("clips", { keyPath: "id" }); };
+        var r = indexedDB.open("cry-matcher", 2);
+        r.onupgradeneeded = function () { var d = r.result;
+          if (!d.objectStoreNames.contains("clips")) d.createObjectStore("clips", { keyPath: "id" });
+          if (!d.objectStoreNames.contains("log")) d.createObjectStore("log", { keyPath: "id" }); };
         r.onsuccess = function () { res(r.result); };
         r.onerror = function () { rej(r.error); };
       } catch (e) { rej(e); }
     });
   }
-  function tx(mode, fn) {
+  function tx(mode, fn, store) {
+    store = store || "clips";
     return new Promise(function (res, rej) {
       try {
-        var t = idb.transaction("clips", mode), s = t.objectStore("clips"), out = fn(s);
+        var t = idb.transaction(store, mode), s = t.objectStore(store), out = fn(s);
         t.oncomplete = function () { res(out && out.result !== undefined ? out.result : undefined); };
         t.onerror = t.onabort = function () { rej(t.error); };
       } catch (e) { rej(e); }
@@ -219,6 +253,11 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
     ver: r.ver, pcm: new Int16Array(r.pcm), vec: new Float32Array(r.vec) }; }
   function putClip(c) { return idbOk ? tx("readwrite", function (s) { return s.put(toRow(c)); }) : Promise.resolve(); }
   function delClip(id) { return idbOk ? tx("readwrite", function (s) { return s.delete(id); }) : Promise.resolve(); }
+  // Result log: one row per match. {id, time, predicted, lead, scores, inMatch, cryHeard, quiet, actual, pcm?}
+  var log = [];
+  function putLog(e) { return idbOk ? tx("readwrite", function (s) { return s.put(e); }, "log") : Promise.resolve(); }
+  function delLog(id) { return idbOk ? tx("readwrite", function (s) { return s.delete(id); }, "log") : Promise.resolve(); }
+  function loadLog() { return tx("readonly", function (s) { return s.getAll(); }, "log").then(function (r) { return r || []; }); }
   function loadAll() { return tx("readonly", function (s) { return s.getAll(); }).then(function (rows) { return (rows || []).map(fromRow); }); }
 
   function askPersist() {
@@ -394,18 +433,104 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
       fill.style.width = Math.max(2, (r.score + 1) * 50) + "%"; fill.style.background = color(r.sound);
       tr.appendChild(fill); row.appendChild(name); row.appendChild(tr); row.appendChild(v); bars.appendChild(row);
     });
-    var sa = $("saveAs"); sa.textContent = "";
-    SOUNDS.forEach(function (s) {
-      var b = el("button", "", s.id); b.type = "button"; b.style.color = color(s.id);
+    var scores = {}; ranked.forEach(function (r) { scores[r.sound] = Math.round(r.score * 1000) / 1000; });
+    var entry = { id: "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), time: Date.now(), predicted: best.sound,
+      lead: Math.round(lead * 1000) / 1000, scores: scores, inMatch: ready.slice(), cryHeard: a.cry > 0, quiet: !!a.quiet, actual: null };
+    log.push(entry); putLog(entry).catch(function () { idbOk = false; }); renderLog();
+    var row = $("answerRow"); row.textContent = ""; $("answerStatus").textContent = ""; $("addRef").hidden = true; $("keepAudio").checked = false;
+    SOUNDS.map(function (s) { return s.id; }).concat(["unsure"]).forEach(function (id) {
+      var b = el("button", "", id === "unsure" ? "Not sure / nothing worked" : id); b.type = "button";
+      if (id !== "unsure") b.style.color = color(id); else b.style.flexBasis = "100%";
       b.onclick = function () {
-        if (lastMatch !== a || a.saved) return;
-        a.saved = true; addClip(s.id, a, "match").then(function () { sa.textContent = ""; sa.appendChild(el("span", "small", "Added to " + s.id + ".")); });
+        if (log.indexOf(entry) < 0) log.push(entry);
+        entry.actual = id; putLog(entry).catch(function () {}); renderLog();
+        [].forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); });
+        $("answerStatus").textContent = id === "unsure" ? "Saved as not sure. It does not count as right or wrong."
+          : id === entry.predicted ? "Saved. Right: the page said " + entry.predicted + "." : "Saved. Wrong: the page said " + entry.predicted + ".";
+        var ar = $("addRef");
+        if (id === "unsure") { ar.hidden = true; return; }
+        ar.hidden = false; ar.disabled = !!a.addedAs; ar.textContent = a.addedAs ? "Added to " + a.addedAs + " references" : "Also add this clip to " + id + " references";
+        ar.onclick = function () { if (a.addedAs) return; a.addedAs = id; ar.disabled = true; addClip(id, a, "match").then(function () { ar.textContent = "Added to " + id + " references"; }); };
       };
-      sa.appendChild(b);
+      row.appendChild(b);
     });
+    $("keepAudio").onchange = function () {
+      if (log.indexOf(entry) < 0) log.push(entry);
+      if (this.checked) entry.pcm = toInt16(a.wave).buffer; else delete entry.pcm;
+      putLog(entry).catch(function () {}); renderLog();
+    };
     $("result").hidden = false;
     $("playMatch").onclick = function () { play(toInt16(a.wave), $("playMatch")); };
   }
+  var showAllLog = false;
+  function isSound(x) { return SOUNDS.some(function (s) { return s.id === x; }); }
+  function isRight(e) { return e.actual && e.actual !== "unsure" ? e.actual === e.predicted : null; }
+  function fmtTime(t) { var d = new Date(t); return d.toLocaleDateString([], { month: "short", day: "numeric" }) + " " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); }
+  function renderLog() {
+    var out = $("scoreOut"); out.textContent = "";
+    var judged = log.filter(function (e) { return isRight(e) !== null; });
+    var right = judged.filter(isRight).length;
+    var unsure = log.filter(function (e) { return e.actual === "unsure"; }).length, open = log.filter(function (e) { return !e.actual; }).length;
+    if (!judged.length) out.appendChild(el("p", "small muted", log.length ? "No answers yet. Tap what calmed the baby on a result." : "No results yet. Record a cry to start."));
+    else {
+      out.appendChild(el("div", "big", "Right: " + right + " of " + judged.length + " (" + Math.round(100 * right / judged.length) + "%)"));
+      var chance = judged.reduce(function (s, e) { return s + 1 / Math.max(1, (e.inMatch || []).length); }, 0) / judged.length;
+      out.appendChild(el("p", "small muted", "Pure chance is about " + Math.round(chance * 100) + "%. With few results, the score can change a lot."));
+      var tb = el("table"), th = el("tr"); ["Real need", "Times", "Page right"].forEach(function (h) { th.appendChild(el("th", "", h)); });
+      tb.appendChild(th);
+      SOUNDS.forEach(function (s) {
+        var es = judged.filter(function (e) { return e.actual === s.id; }); if (!es.length) return;
+        var tr = el("tr"), a = el("td", "", s.id); a.style.color = color(s.id);
+        tr.appendChild(a); tr.appendChild(el("td", "mono", String(es.length)));
+        tr.appendChild(el("td", "mono", es.filter(isRight).length + " of " + es.length)); tb.appendChild(tr);
+      });
+      out.appendChild(tb);
+    }
+    if (unsure || open) out.appendChild(el("p", "small muted", "Not sure: " + unsure + ". Not answered: " + open + "."));
+    var list = $("logList"); list.textContent = "";
+    var rows = log.slice().sort(function (a, b) { return b.time - a.time; });
+    $("moreLog").hidden = showAllLog || rows.length <= 10;
+    (showAllLog ? rows : rows.slice(0, 10)).forEach(function (e) {
+      var r = el("div", "logrow"), left = el("div"), sel = el("select"), del = el("button");
+      left.appendChild(el("div", "when", fmtTime(e.time) + (e.cryHeard ? "" : " · no crying heard") + (e.pcm ? " · audio kept" : "")));
+      var p = el("div"); p.appendChild(document.createTextNode("Page: ")); var pb = el("b", "", e.predicted); pb.style.color = color(e.predicted); p.appendChild(pb);
+      var ok = isRight(e); if (ok !== null) { p.appendChild(document.createTextNode(" ")); p.appendChild(el("span", "mark " + (ok ? "ok" : "bad"), ok ? "Right" : "Wrong")); }
+      left.appendChild(p);
+      sel.setAttribute("aria-label", "What calmed the baby");
+      [["", "Answer?"]].concat(SOUNDS.map(function (s) { return [s.id, s.id]; }), [["unsure", "Not sure"]]).forEach(function (o) {
+        var op = el("option", "", o[1]); op.value = o[0]; if ((e.actual || "") === o[0]) op.selected = true; sel.appendChild(op); });
+      sel.onchange = function () { e.actual = sel.value || null; putLog(e).catch(function () {}); renderLog(); };
+      del.type = "button"; del.innerHTML = ICON.del; del.setAttribute("aria-label", "Delete result");
+      del.onclick = function () {
+        if (!del.classList.contains("arm")) { del.classList.add("arm"); del.textContent = "Sure?";
+          setTimeout(function () { if (del.isConnected) { del.classList.remove("arm"); del.innerHTML = ICON.del; } }, 3000); return; }
+        log = log.filter(function (x) { return x !== e; }); delLog(e.id).catch(function () {}).then(renderLog);
+      };
+      r.appendChild(left); r.appendChild(sel); r.appendChild(del); list.appendChild(r);
+    });
+  }
+  function saveFile(parts, name, type) {
+    var url = URL.createObjectURL(new Blob(parts, { type: type })), link = document.createElement("a");
+    link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+  }
+  function logCSV() {
+    var ids = SOUNDS.map(function (s) { return s.id; });
+    var lines = [["time", "predicted", "actual", "right", "lead", "crying_heard", "sounds_in_match"].concat(ids.map(function (i) { return "score_" + i; })).join(",")];
+    log.slice().sort(function (a, b) { return a.time - b.time; }).forEach(function (e) {
+      var ok = isRight(e);
+      lines.push([new Date(e.time).toISOString(), e.predicted, e.actual || "", ok === null ? "" : ok ? "yes" : "no", e.lead, e.cryHeard ? "yes" : "no",
+        (e.inMatch || []).join(" ")].concat(ids.map(function (i) { return e.scores && i in e.scores ? e.scores[i] : ""; })).join(","));
+    });
+    return lines.join("\n") + "\n";
+  }
+  $("moreLog").onclick = function () { showAllLog = true; renderLog(); };
+  $("csvBtn").onclick = function () {
+    if (!log.length) { $("backupStatus").textContent = "There are no results to export."; return; }
+    var name = "cry-matcher-results-" + new Date().toISOString().slice(0, 10) + ".csv";
+    saveFile([logCSV()], name, "text/csv");
+    $("backupStatus").textContent = "Saved " + log.length + " results to " + name + " in your Downloads.";
+  };
   function updateReady(flash) {
     var ready = readySounds(), n = $("readyNote");
     if (ready.length >= 2) { n.hidden = true; return; }
@@ -520,18 +645,22 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
   // Backup: one JSON file with every clip. Import adds clips that are not already here.
   function b64(u8) { var s = "", CH = 0x8000; for (var i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s); }
   $("exportBtn").onclick = function () {
-    if (!clips.length) { $("backupStatus").textContent = "There are no clips to export."; return; }
-    var parts = ['{"app":"cry-matcher","version":1,"exported":' + JSON.stringify(new Date().toISOString()) + ',"clips":['];
+    if (!clips.length && !log.length) { $("backupStatus").textContent = "There is nothing to export."; return; }
+    var parts = ['{"app":"cry-matcher","version":2,"exported":' + JSON.stringify(new Date().toISOString()) + ',"clips":['];
     clips.forEach(function (c, i) {
       parts.push((i ? "," : "") + JSON.stringify({ id: c.id, sound: c.sound, created: c.created, source: c.source, dur: c.dur,
         pcm16k: b64(new Uint8Array(c.pcm.buffer, c.pcm.byteOffset, c.pcm.byteLength)) }));
     });
+    parts.push('],"log":[');
+    log.forEach(function (e, i) {
+      var o = { id: e.id, time: e.time, predicted: e.predicted, lead: e.lead, scores: e.scores, inMatch: e.inMatch, cryHeard: e.cryHeard, quiet: e.quiet, actual: e.actual };
+      if (e.pcm) o.pcm16k = b64(new Uint8Array(e.pcm));
+      parts.push((i ? "," : "") + JSON.stringify(o));
+    });
     parts.push("]}");
     var name = "cry-matcher-backup-" + new Date().toISOString().slice(0, 10) + ".json";
-    var url = URL.createObjectURL(new Blob(parts, { type: "application/json" })), link = document.createElement("a");
-    link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove();
-    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
-    $("backupStatus").textContent = "Saved " + clips.length + " clips to " + name + " in your Downloads.";
+    saveFile(parts, name, "application/json");
+    $("backupStatus").textContent = "Saved " + clips.length + " clips and " + log.length + " results to " + name + " in your Downloads.";
   };
   $("importFile").onchange = function () {
     var f = this.files && this.files[0]; this.value = ""; if (!f) return;
@@ -540,8 +669,17 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
       var data = JSON.parse(t);
       if (!data || data.app !== "cry-matcher" || !Array.isArray(data.clips)) throw new Error("bad");
       var have = {}; clips.forEach(function (c) { have[c.id] = 1; });
+      var haveLog = {}; log.forEach(function (e) { haveLog[e.id] = 1; });
+      var newLog = (Array.isArray(data.log) ? data.log : []).filter(function (e) { return e && e.id && !haveLog[e.id] && isSound(e.predicted); }).map(function (e) {
+        var o = { id: String(e.id), time: +e.time || Date.now(), predicted: e.predicted, lead: +e.lead || 0, scores: e.scores || {}, inMatch: Array.isArray(e.inMatch) ? e.inMatch : [],
+          cryHeard: !!e.cryHeard, quiet: !!e.quiet, actual: isSound(e.actual) || e.actual === "unsure" ? e.actual : null };
+        var sc = {}; Object.keys(o.scores).forEach(function (k) { if (isSound(k) && isFinite(+o.scores[k])) sc[k] = +o.scores[k]; }); o.scores = sc;
+        o.inMatch = o.inMatch.filter(isSound);
+        if (typeof e.pcm16k === "string") { var by = CryEngine.b64ToBytes(e.pcm16k); o.pcm = by.buffer.slice(by.byteOffset, by.byteOffset + by.byteLength); }
+        return o; });
+      newLog.forEach(function (e) { log.push(e); putLog(e).catch(function () {}); });
       var todo = data.clips.filter(function (c) { return c && !have[c.id] && SOUNDS.some(function (s) { return s.id === c.sound; }) && typeof c.pcm16k === "string"; });
-      return withModel().then(function (m) {
+      return (todo.length ? withModel() : Promise.resolve(null)).then(function (m) {
         return todo.reduce(function (p, c, i) {
           return p.then(function () {
             st.textContent = "Importing " + (i + 1) + " of " + todo.length;
@@ -550,7 +688,7 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
             var clip = { id: String(c.id), sound: c.sound, created: +c.created || Date.now(), source: String(c.source || "import"), dur: pcm.length / 16000, cry: e.cryShare, pcm: pcm, vec: e.vec, ver: MODEL_VER };
             clips.push(clip); return putClip(clip).catch(function () { idbOk = false; });
           });
-        }, Promise.resolve()).then(function () { askPersist(); render(); st.textContent = "Imported " + todo.length + " clips. Skipped " + (data.clips.length - todo.length) + " that were already here."; });
+        }, Promise.resolve()).then(function () { askPersist(); render(); renderLog(); st.textContent = "Imported " + todo.length + " clips and " + newLog.length + " results. Skipped the ones that were already here."; });
       });
     }).catch(function () { st.textContent = "This file is not a Cry Matcher backup."; });
   };
@@ -559,7 +697,8 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
   if (!micAllowed()) noMic("");
   try { navigator.permissions.query({ name: "microphone" }).then(function (p) { if (p.state === "denied") noMic(""); }, function () {}); } catch (e) {}
   render();
-  openDB().then(function (d) { idb = d; return loadAll(); }).then(function (rows) { clips = rows; render(); })
+  renderLog();
+  openDB().then(function (d) { idb = d; return loadAll(); }).then(function (rows) { clips = rows; render(); return loadLog(); }).then(function (l) { log = l; renderLog(); })
     .catch(function () { idbOk = false; render(); })
     .then(initModel);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
