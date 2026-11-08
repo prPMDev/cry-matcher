@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cry Matcher</title>
+<meta name="description" content="Private cry sound matcher. Clips stay on this phone.">
+<meta name="theme-color" content="#19657f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* Layout: one narrow column for a phone held in one hand; the match control first, the library below, backup last. */
+:root {
+  --bg: #eef2f5; --surface: #ffffff; --sunk: #e3e9ee; --ink: #142029; --muted: #566573; --line: #d3dbe2;
+  --accent: #19657f; --accent-ink: #ffffff; --warn: #8a5300; --warn-bg: #fff3dc; --bad: #b42318;
+  --s-neh: #c46d1a; --s-owh: #5a5fcf; --s-heh: #b8366f; --s-eairh: #2f8a52; --s-eh: #1f7fae;
+  --f-display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: ui-monospace, "Roboto Mono", monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0c1218; --surface: #141d26; --sunk: #0f171e; --ink: #e4ebf1; --muted: #93a2b0; --line: #24323f;
+  --accent: #5bbfd9; --accent-ink: #062530; --warn: #f2b45a; --warn-bg: #2b2112; --bad: #ff7a6b;
+  --s-neh: #f0a25a; --s-owh: #9a9dff; --s-heh: #f07aaa; --s-eairh: #6fd093; --s-eh: #63bfeb;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0c1218; --surface: #141d26; --sunk: #0f171e; --ink: #e4ebf1; --muted: #93a2b0; --line: #24323f;
+  --accent: #5bbfd9; --accent-ink: #062530; --warn: #f2b45a; --warn-bg: #2b2112; --bad: #ff7a6b;
+  --s-neh: #f0a25a; --s-owh: #9a9dff; --s-heh: #f07aaa; --s-eairh: #6fd093; --s-eh: #63bfeb;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.5 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(20px, env(safe-area-inset-top, 0px)); padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); margin: 0; }
+body.no-mic .pick { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+[hidden] { display: none !important; }
+main { max-width: 560px; margin: 0 auto; display: grid; gap: 28px; }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: 30px; font-weight: 750; letter-spacing: -0.01em; }
+h2 { font-size: 21px; font-weight: 600; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+header { display: grid; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; width: fit-content; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.chip.ok .dot { background: var(--s-eairh); } .chip.err .dot { background: var(--bad); }
+
+button, .btn { font: 700 16px/1 var(--f-body); color: var(--ink); background: var(--sunk); border: 1px solid var(--line);
+  border-radius: 12px; min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button.primary, .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+button:disabled { opacity: .45; cursor: default; }
+button:focus-visible, .btn:focus-within, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.btn input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.btn { position: relative; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; }
+.row > * { flex: 1 1 140px; }
+
+/* Match */
+.match { background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 22px 18px; display: grid; gap: 18px; }
+.recwrap { display: grid; justify-items: center; gap: 12px; }
+.bigrec { width: 152px; height: 152px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink);
+  font: 750 20px/1.1 var(--f-display); flex-direction: column; position: relative; }
+.bigrec svg.ring { position: absolute; inset: -8px; width: 168px; height: 168px; transform: rotate(-90deg); pointer-events: none; }
+.bigrec svg.ring circle { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; opacity: .35; }
+.bigrec .sub { font: 400 13px/1.2 var(--f-body); opacity: .85; }
+.bigrec.live { background: var(--bad); color: #fff; }
+.level { width: 152px; height: 6px; border-radius: 3px; background: var(--sunk); overflow: hidden; }
+.level i { display: block; height: 100%; width: 0; background: var(--s-eairh); transition: width .08s linear; }
+.status { min-height: 1.5em; text-align: center; }
+.note { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 15px; }
+.result { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+.verdict { display: grid; gap: 2px; }
+.verdict .lbl { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.verdict .name { font: 750 40px/1 var(--f-display); }
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: 64px 1fr 56px; align-items: center; gap: 10px; }
+.bar .track { height: 12px; background: var(--sunk); border-radius: 6px; overflow: hidden; }
+.bar .track i { display: block; height: 100%; border-radius: 6px; }
+.bar .v { text-align: right; font-size: 14px; }
+.saveas { display: grid; gap: 8px; }
+.saveas .row > button { flex: 1 1 80px; min-height: 44px; }
+
+/* Library */
+.sounds { display: grid; gap: 14px; }
+.sound { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; }
+.shead { display: flex; align-items: center; gap: 12px; }
+.swatch { width: 14px; height: 40px; border-radius: 7px; flex: none; }
+.shead .t { flex: 1; min-width: 0; }
+.shead .t b { font: 600 22px/1.1 var(--f-display); display: block; }
+.count { display: flex; gap: 4px; align-items: center; font-size: 13px; color: var(--muted); }
+.count i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid currentColor; }
+.count i.on { background: currentColor; }
+.clips { display: grid; gap: 8px; }
+.clip { display: grid; grid-template-columns: 48px 1fr 48px; gap: 10px; align-items: center; }
+.clip canvas { width: 100%; height: 40px; display: block; min-width: 0; }
+.clip .meta { font-size: 12px; color: var(--muted); grid-column: 2; margin-top: -6px; }
+.clip button { width: 48px; padding: 0; }
+.clip button.del.arm { background: var(--bad); color: #fff; border-color: transparent; }
+.empty { font-size: 14px; color: var(--muted); }
+
+section > .head { display: grid; gap: 4px; margin-bottom: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+td { padding: 4px 0; } td:last-child { text-align: right; }
+footer { display: grid; gap: 8px; font-size: 14px; color: var(--muted); }
+.icon { width: 20px; height: 20px; fill: currentColor; }
+body.no-mic .needs-mic { display: none !important; }
+body:not(.no-mic) .no-mic-only { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<main>
+  <header>
+    <h1>Cry Matcher</h1>
+    <p class="muted">Your own library of cry sounds. Record a cry and see which of your sounds it is closest to. Clips stay on this phone.</p>
+    <span class="chip" id="modelChip"><span class="dot"></span><span id="modelText">Loading the sound model</span></span>
+  </header>
+
+  <section class="match" aria-labelledby="matchTitle">
+    <h2 id="matchTitle" hidden>Match a cry</h2>
+    <div class="recwrap">
+      <button class="bigrec needs-mic" id="matchRec" type="button">
+        <svg class="ring" viewBox="0 0 168 168" aria-hidden="true"><circle id="ring" cx="84" cy="84" r="80" stroke-dasharray="502.65" stroke-dashoffset="502.65"></circle></svg>
+        <span id="matchRecLabel">Record</span><span class="sub" id="matchRecSub">5 seconds</span>
+      </button>
+      <div class="level needs-mic" aria-hidden="true"><i id="level"></i></div>
+      <p class="small muted no-mic-only" style="text-align:center">1. Record the cry in your phone's recorder app and save it.<br>2. Tap the button below and pick that recording.</p>
+      <label class="btn pick" style="min-height:56px;width:100%">Pick a recording to match
+        <input type="file" accept="audio/*" id="matchFile"></label>
+      <p class="status" id="matchStatus" aria-live="polite"></p>
+    </div>
+    <p class="note" id="readyNote" hidden></p>
+    <div class="result" id="result" hidden>
+      <div class="verdict"><span class="lbl">Closest sound</span><span class="name" id="verdictName"></span>
+        <span class="muted small" id="verdictSub"></span></div>
+      <p class="note" id="resultWarn" hidden></p>
+      <div class="bars" id="bars"></div>
+      <div class="row"><button type="button" id="playMatch">Play this clip</button></div>
+      <div class="saveas"><span class="small muted">You know what it was? Add this clip to a sound:</span>
+        <div class="row" id="saveAs"></div></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="libTitle">
+    <div class="head"><h2 id="libTitle">Your sounds</h2>
+      <p class="small muted">Add 3 or more clips to a sound. Cut each clip to the cry only. Clips from different babies give a fairer test.</p></div>
+    <div class="sounds" id="sounds"></div>
+  </section>
+
+  <section aria-labelledby="checkTitle">
+    <div class="head"><h2 id="checkTitle">How well your clips separate</h2>
+      <p class="small muted">Each clip is matched against all the other clips. A high score can also mean the clips came from the same baby or video.</p></div>
+    <div class="card"><button type="button" id="runCheck">Run the check</button><div id="checkOut"></div></div>
+  </section>
+
+  <section aria-labelledby="backupTitle">
+    <div class="head"><h2 id="backupTitle">Storage and backup</h2></div>
+    <div class="card">
+      <p id="storeInfo" class="small">Reading storage.</p>
+      <div class="row">
+        <button type="button" id="exportBtn">Export all clips</button>
+        <label class="btn">Import clips<input type="file" accept=".json,application/json" id="importFile"></label>
+      </div>
+      <p class="small muted" id="backupStatus" aria-live="polite">Clearing Chrome data for this site deletes the clips. Export makes one file you can keep.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>This is a private experiment. It is not medical advice. Always check the baby.</p>
+    <p>Test result: on 457 open cry recordings labeled by parents, this method did not predict the label better than chance. Your own clips can give a different result.</p>
+  </footer>
+</main>
+
+<script src="tf.min.js"></script>
+<script src="engine.js"></script>
+<script>
+(function () {
+  "use strict";
+  var SOUNDS = [
+    { id: "neh", gloss: "hungry" }, { id: "owh", gloss: "sleepy" }, { id: "heh", gloss: "discomfort" },
+    { id: "eairh", gloss: "lower gas" }, { id: "eh", gloss: "burp" }];
+  var MIN_CLIPS = 3, MAX_SEC = 15, REC_SEC = 5, MODEL_VER = 1;
+  var $ = function (id) { return document.getElementById(id); };
+  var clips = [];            // {id, sound, created, source, dur, cry, pcm(Int16Array), vec(Float32Array), ver}
+  var model = null, modelWait = [], lastMatch = null, idb = null, idbOk = true;
+
+  // ---------- storage (IndexedDB, this device only) ----------
+  function openDB() {
+    return new Promise(function (res, rej) {
+      try {
+        var r = indexedDB.open("cry-matcher", 1);
+        r.onupgradeneeded = function () { r.result.createObjectStore("clips", { keyPath: "id" }); };
+        r.onsuccess = function () { res(r.result); };
+        r.onerror = function () { rej(r.error); };
+      } catch (e) { rej(e); }
+    });
+  }
+  function tx(mode, fn) {
+    return new Promise(function (res, rej) {
+      try {
+        var t = idb.transaction("clips", mode), s = t.objectStore("clips"), out = fn(s);
+        t.oncomplete = function () { res(out && out.result !== undefined ? out.result : undefined); };
+        t.onerror = t.onabort = function () { rej(t.error); };
+      } catch (e) { rej(e); }
+    });
+  }
+  function toRow(c) { return { id: c.id, sound: c.sound, created: c.created, source: c.source, dur: c.dur, cry: c.cry,
+    ver: c.ver, pcm: c.pcm.buffer.slice(0), vec: c.vec.buffer.slice(0) }; }
+  function fromRow(r) { return { id: r.id, sound: r.sound, created: r.created, source: r.source, dur: r.dur, cry: r.cry,
+    ver: r.ver, pcm: new Int16Array(r.pcm), vec: new Float32Array(r.vec) }; }
+  function putClip(c) { return idbOk ? tx("readwrite", function (s) { return s.put(toRow(c)); }) : Promise.resolve(); }
+  function delClip(id) { return idbOk ? tx("readwrite", function (s) { return s.delete(id); }) : Promise.resolve(); }
+  function loadAll() { return tx("readonly", function (s) { return s.getAll(); }).then(function (rows) { return (rows || []).map(fromRow); }); }
+
+  function askPersist() {
+    try { if (navigator.storage && navigator.storage.persist) return navigator.storage.persist().catch(function () { return false; }); } catch (e) {}
+    return Promise.resolve(false);
+  }
+  function showStore() {
+    var bytes = clips.reduce(function (a, c) { return a + c.pcm.byteLength + c.vec.byteLength; }, 0);
+    var p = (navigator.storage && navigator.storage.persisted) ? navigator.storage.persisted().catch(function () { return null; }) : Promise.resolve(null);
+    p.then(function (kept) {
+      var t = idbOk
+        ? "Saved on this phone: " + clips.length + " clip" + (clips.length === 1 ? "" : "s") + ", " + (bytes / 1048576).toFixed(1) + " MB. " +
+          (kept === true ? "Protected from automatic cleanup: yes." : kept === false ? "Protected from automatic cleanup: no. Export a backup from time to time." : "")
+        : "This view does not let the page save clips. Clips last only until you close the page. Export them before you close.";
+      $("storeInfo").textContent = t;
+    });
+  }
+
+  // ---------- audio ----------
+  var actx = null;
+  function ctx() { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); return actx; }
+  function decodeToPCM(ab) {
+    return ctx().decodeAudioData(ab).then(function (buf) {
+      var dur = Math.min(buf.duration, MAX_SEC), n = Math.ceil(dur * 16000);
+      var off = new OfflineAudioContext(1, n, 16000), src = off.createBufferSource();
+      src.buffer = buf; src.connect(off.destination); src.start(0);
+      return off.startRendering().then(function (r) {
+        return { wave: r.getChannelData(0).slice(0), cut: buf.duration > MAX_SEC, dur: dur };
+      });
+    });
+  }
+  function toInt16(f) { var o = new Int16Array(f.length); for (var i = 0; i < f.length; i++) { var v = Math.max(-1, Math.min(1, f[i])); o[i] = v * 32767; } return o; }
+  function toFloat(i16) { var o = new Float32Array(i16.length); for (var i = 0; i < i16.length; i++) o[i] = i16[i] / 32767; return o; }
+  function rms(f) { var s = 0; for (var i = 0; i < f.length; i++) s += f[i] * f[i]; return Math.sqrt(s / Math.max(1, f.length)); }
+
+  var playing = null;
+  function play(i16, btn) {
+    if (playing) { try { playing.src.stop(); } catch (e) {} var was = playing.btn; playing = null; if (was === btn) return; }
+    var c = ctx(); if (c.state === "suspended") c.resume();
+    var b = c.createBuffer(1, i16.length, 16000); b.getChannelData(0).set(toFloat(i16));
+    var s = c.createBufferSource(); s.buffer = b; s.connect(c.destination); s.start();
+    var label = btn.innerHTML; btn.innerHTML = ICON.stop; btn.setAttribute("aria-label", "Stop");
+    playing = { src: s, btn: btn };
+    s.onended = function () { btn.innerHTML = label; btn.setAttribute("aria-label", "Play"); if (playing && playing.src === s) playing = null; };
+  }
+
+  // Microphone. Some views do not allow it; then the phone's own recorder app is used through a file picker.
+  function micAllowed() {
+    try {
+      var pp = document.permissionsPolicy || document.featurePolicy;
+      if (pp && pp.allowsFeature) return pp.allowsFeature("microphone");
+    } catch (e) {}
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }
+  function noMic(msg) {
+    document.body.classList.add("no-mic"); if (msg) $("matchStatus").textContent = msg;
+  }
+  function getMic() {
+    if (!window.MediaRecorder || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return Promise.reject(new Error("no mic"));
+    return Promise.race([
+      navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } }),
+      new Promise(function (_, rej) { setTimeout(function () { rej(new Error("mic timeout")); }, 6000); })]);
+  }
+  function recordMic(onTick) {
+    var stream, rec, chunks = [], an, raf;
+    return getMic()
+      .then(function (s) {
+        stream = s; rec = new MediaRecorder(s);
+        try { var c = ctx(); if (c.state === "suspended") c.resume(); an = c.createAnalyser(); an.fftSize = 512; c.createMediaStreamSource(s).connect(an); } catch (e) { an = null; }
+        var data = new Float32Array(512), t0 = performance.now();
+        (function loop() {
+          var lvl = 0; if (an) { an.getFloatTimeDomainData(data); lvl = Math.min(1, rms(data) * 6); }
+          onTick(Math.min(1, (performance.now() - t0) / (REC_SEC * 1000)), lvl);
+          raf = requestAnimationFrame(loop);
+        })();
+        return new Promise(function (res, rej) {
+          rec.ondataavailable = function (e) { if (e.data.size) chunks.push(e.data); };
+          rec.onstop = function () { res(new Blob(chunks, { type: rec.mimeType })); };
+          rec.onerror = function (e) { rej(e.error || e); };
+          rec.start(); setTimeout(function () { if (rec.state !== "inactive") rec.stop(); }, REC_SEC * 1000);
+        });
+      })
+      .finally(function () { cancelAnimationFrame(raf); if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); onTick(0, 0); });
+  }
+
+  // ---------- model ----------
+  function withModel() { return model ? Promise.resolve(model) : new Promise(function (r) { modelWait.push(r); }); }
+  function initModel() {
+    var chip = $("modelChip");
+    if (!window.tf || !window.CryEngine) return fail("The sound model did not load. Reload the page.");
+    loadScript("yamnet-weights.js").then(function () {
+      return tf.setBackend("webgl").catch(function () { return false; }).then(function (ok) {
+        if (!ok || tf.getBackend() !== "webgl") return tf.setBackend("cpu");
+      }).then(function () { return tf.ready(); });
+    }).then(function () {
+      model = new CryEngine.Model(tf, window.YAMNET); window.YAMNET = null;
+      model.embedClip(new Float32Array(16000));
+      chip.classList.add("ok"); $("modelText").textContent = "Sound model ready";
+      modelWait.splice(0).forEach(function (r) { r(model); });
+      return refreshOld();
+    }).catch(function (e) { fail("The sound model did not load. Reload the page. (" + (e && e.message || e) + ")"); });
+    function fail(m) { chip.classList.add("err"); $("modelText").textContent = m; }
+  }
+  function loadScript(src) {
+    return new Promise(function (res, rej) { var s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = function () { rej(new Error("could not load " + src)); }; document.body.appendChild(s); });
+  }
+  function refreshOld() {
+    var old = clips.filter(function (c) { return c.ver !== MODEL_VER; });
+    return old.reduce(function (p, c) { return p.then(function () { var e = model.embedClip(toFloat(c.pcm)); c.vec = e.vec; c.cry = e.cryShare; c.ver = MODEL_VER; return putClip(c); }); }, Promise.resolve())
+      .then(function () { if (old.length) render(); });
+  }
+
+  // ---------- adding clips ----------
+  function analyse(blobOrFile) {
+    return blobOrFile.arrayBuffer().then(decodeToPCM).then(function (d) {
+      if (d.wave.length < 8000) throw new Error("The clip is too short. Use at least 1 second.");
+      d.wave = toFloat(toInt16(d.wave)); // same samples as the stored clip, so results stay the same after reload or import
+      return withModel().then(function (m) { var e = m.embedClip(d.wave); return { wave: d.wave, cut: d.cut, dur: d.dur, vec: e.vec, cry: e.cryShare, quiet: rms(d.wave) < 0.003 }; });
+    }, function (e) { if (e && e.message && /too short/.test(e.message)) throw e; throw new Error("This audio file cannot be read. Use a WAV, M4A, MP3, OGG or WEBM file."); });
+  }
+  function addClip(sound, a, source) {
+    var c = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), sound: sound, created: Date.now(), source: source,
+      dur: a.dur, cry: a.cry, pcm: toInt16(a.wave), vec: a.vec, ver: MODEL_VER };
+    clips.push(c);
+    return putClip(c).catch(function () { idbOk = false; }).then(function () { if (clips.length === 1) return askPersist(); })
+      .then(function () { render(); return c; });
+  }
+  function soundStatus(sound, text, isErr) { var el = document.querySelector('[data-status="' + sound + '"]'); if (el) { el.textContent = text; el.style.color = isErr ? "var(--bad)" : ""; } }
+  function handleRef(sound, getBlob, source) {
+    soundStatus(sound, "Working");
+    Promise.resolve().then(getBlob).then(function (b) { soundStatus(sound, "Analysing"); return analyse(b); })
+      .then(function (a) { return addClip(sound, a, source).then(function () {
+        var msg = a.cut ? "Added. Only the first " + MAX_SEC + " seconds were kept." : "Added.";
+        if (a.cry === 0) msg += " No crying was heard in this clip.";
+        soundStatus(sound, msg, a.cry === 0);
+      }); })
+      .catch(function (e) { soundStatus(sound, (e && e.message) || "That did not work.", true); });
+  }
+
+  // ---------- matching ----------
+  function readySounds() { return SOUNDS.filter(function (s) { return count(s.id) >= MIN_CLIPS; }).map(function (s) { return s.id; }); }
+  function count(id) { return clips.filter(function (c) { return c.sound === id; }).length; }
+  function refsFor(ready) { return clips.filter(function (c) { return ready.indexOf(c.sound) >= 0; }).map(function (c) { return { sound: c.sound, vec: c.vec }; }); }
+  function color(id) { return "var(--s-" + id + ")"; }
+  function gloss(id) { return SOUNDS.filter(function (s) { return s.id === id; })[0].gloss; }
+
+  function runMatch(getBlob) {
+    var ready = readySounds();
+    if (ready.length < 2) { updateReady(true); return; }
+    $("matchStatus").textContent = "Working";
+    Promise.resolve().then(getBlob).then(function (b) { $("matchStatus").textContent = "Analysing"; return analyse(b); })
+      .then(function (a) { showResult(a, ready); $("matchStatus").textContent = ""; })
+      .catch(function (e) { $("matchStatus").textContent = (e && e.message) || "That did not work."; });
+  }
+  function showResult(a, ready) {
+    var ranked = CryEngine.match(a.vec, refsFor(ready));
+    lastMatch = a; lastMatch.saved = false;
+    var best = ranked[0], second = ranked[1], lead = best.score - second.score;
+    $("verdictName").textContent = best.sound; $("verdictName").style.color = color(best.sound);
+    $("verdictSub").innerHTML = "";
+    $("verdictSub").textContent = "Your label: " + gloss(best.sound) + ". Lead over " + second.sound + ": " + lead.toFixed(2) + ".";
+    var warn = [];
+    if (a.cry === 0) warn.push("No crying was heard in this clip. The result may mean nothing.");
+    if (lead < 0.05) warn.push("Low confidence: the top two sounds are almost equal.");
+    if (a.quiet) warn.push("The clip is very quiet. Hold the phone closer.");
+    var missing = SOUNDS.filter(function (s) { return ready.indexOf(s.id) < 0; }).map(function (s) { return s.id; });
+    if (missing.length) warn.push("Not in this match (fewer than " + MIN_CLIPS + " clips): " + missing.join(", ") + ".");
+    $("resultWarn").hidden = !warn.length; $("resultWarn").textContent = warn.join(" ");
+    var bars = $("bars"); bars.textContent = "";
+    ranked.forEach(function (r) {
+      var row = el("div", "bar"), name = el("b", "", r.sound), tr = el("div", "track"), fill = el("i"), v = el("span", "v mono", r.score.toFixed(2));
+      name.style.color = color(r.sound);
+      fill.style.width = Math.max(2, (r.score + 1) * 50) + "%"; fill.style.background = color(r.sound);
+      tr.appendChild(fill); row.appendChild(name); row.appendChild(tr); row.appendChild(v); bars.appendChild(row);
+    });
+    var sa = $("saveAs"); sa.textContent = "";
+    SOUNDS.forEach(function (s) {
+      var b = el("button", "", s.id); b.type = "button"; b.style.color = color(s.id);
+      b.onclick = function () {
+        if (lastMatch !== a || a.saved) return;
+        a.saved = true; addClip(s.id, a, "match").then(function () { sa.textContent = ""; sa.appendChild(el("span", "small", "Added to " + s.id + ".")); });
+      };
+      sa.appendChild(b);
+    });
+    $("result").hidden = false;
+    $("playMatch").onclick = function () { play(toInt16(a.wave), $("playMatch")); };
+  }
+  function updateReady(flash) {
+    var ready = readySounds(), n = $("readyNote");
+    if (ready.length >= 2) { n.hidden = true; return; }
+    n.hidden = false;
+    n.textContent = "To match, add " + MIN_CLIPS + " clips to at least 2 sounds below. Sounds ready now: " + (ready.length ? ready.join(", ") : "none") + ".";
+    if (flash) n.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  // ---------- rendering ----------
+  var ICON = {
+    play: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+    stop: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h10v10H7z"/></svg>',
+    del: '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h4v2H4V5h4zm-3 6h12l-1 12H7z"/></svg>'
+  };
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function drawWave(cv, pcm, col) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth || 200, h = cv.clientHeight || 40;
+    cv.width = w * dpr; cv.height = h * dpr;
+    var g = cv.getContext("2d"); g.scale(dpr, dpr); g.fillStyle = getComputedStyle(cv).color;
+    var step = pcm.length / w, mid = h / 2;
+    for (var x = 0; x < w; x++) {
+      var lo = 0, hi = 0, a = Math.floor(x * step), b = Math.min(pcm.length, Math.floor((x + 1) * step));
+      for (var i = a; i < b; i++) { var v = pcm[i] / 32767; if (v < lo) lo = v; if (v > hi) hi = v; }
+      g.fillRect(x, mid - hi * mid, 1, Math.max(1, (hi - lo) * mid));
+    }
+  }
+  function render() {
+    var box = $("sounds"); box.textContent = "";
+    SOUNDS.forEach(function (s) {
+      var mine = clips.filter(function (c) { return c.sound === s.id; }).sort(function (a, b) { return b.created - a.created; });
+      var card = el("div", "sound"), head = el("div", "shead"), sw = el("span", "swatch"), t = el("div", "t");
+      sw.style.background = color(s.id);
+      var nm = el("b", "", s.id); nm.style.color = color(s.id); t.appendChild(nm); t.appendChild(el("span", "small muted", "Your label: " + s.gloss));
+      var cnt = el("div", "count"); cnt.style.color = mine.length >= MIN_CLIPS ? color(s.id) : "";
+      for (var k = 0; k < MIN_CLIPS; k++) cnt.appendChild(el("i", k < mine.length ? "on" : ""));
+      cnt.appendChild(el("span", "", mine.length + (mine.length === 1 ? " clip" : " clips")));
+      head.appendChild(sw); head.appendChild(t); head.appendChild(cnt); card.appendChild(head);
+
+      var acts = el("div", "row");
+      var rec = el("button", "needs-mic", "Record " + REC_SEC + " s"); rec.type = "button";
+      rec.onclick = function () { micRecordInto(rec, function (b) { handleRef(s.id, function () { return b; }, "mic"); }); };
+      acts.appendChild(rec);
+      acts.appendChild(fileBtn("Pick a recording", "audio/*", false, "pick", function (f) { handleRef(s.id, function () { return f; }, "file"); }));
+      card.appendChild(acts);
+      var st = el("p", "small muted"); st.setAttribute("data-status", s.id); st.setAttribute("aria-live", "polite"); card.appendChild(st);
+
+      var list = el("div", "clips");
+      if (!mine.length) list.appendChild(el("p", "empty", "No clips yet."));
+      mine.forEach(function (c) {
+        var row = el("div", "clip"), pb = el("button"), cv = el("canvas"), db = el("button", "del");
+        pb.type = db.type = "button"; pb.innerHTML = ICON.play; pb.setAttribute("aria-label", "Play");
+        db.innerHTML = ICON.del; db.setAttribute("aria-label", "Delete");
+        cv.style.color = color(s.id);
+        pb.onclick = function () { play(c.pcm, pb); };
+        db.onclick = function () {
+          if (!db.classList.contains("arm")) { db.classList.add("arm"); db.setAttribute("aria-label", "Tap again to delete"); db.textContent = "Sure?"; db.style.fontSize = "13px";
+            setTimeout(function () { if (db.isConnected) { db.classList.remove("arm"); db.innerHTML = ICON.del; db.style.fontSize = ""; db.setAttribute("aria-label", "Delete"); } }, 3000); return; }
+          clips = clips.filter(function (x) { return x !== c; }); delClip(c.id).catch(function () {}).then(render);
+        };
+        row.appendChild(pb); row.appendChild(cv); row.appendChild(db);
+        var d = new Date(c.created);
+        var meta = el("span", "meta mono", c.dur.toFixed(1) + " s · " + d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + (c.cry === 0 ? " · no crying heard" : ""));
+        row.appendChild(meta);
+        list.appendChild(row);
+        requestAnimationFrame(function () { drawWave(cv, c.pcm); });
+      });
+      card.appendChild(list); box.appendChild(card);
+    });
+    updateReady(false); showStore();
+  }
+  function fileBtn(label, accept, capture, cls, onFile) {
+    var l = el("label", "btn " + cls, label), inp = el("input"); inp.type = "file"; inp.accept = accept;
+    if (capture) inp.setAttribute("capture", "");
+    inp.onchange = function () { var f = inp.files && inp.files[0]; inp.value = ""; if (f) onFile(f); };
+    l.appendChild(inp); return l;
+  }
+  var busyRec = false;
+  function micRecordInto(btn, done) {
+    if (busyRec) return; busyRec = true;
+    var orig = btn.textContent; btn.disabled = true;
+    recordMic(function (p) { btn.textContent = p ? "Recording " + Math.ceil(REC_SEC * (1 - p)) + " s" : orig; })
+      .then(function (b) { busyRec = false; btn.disabled = false; btn.textContent = orig; done(b); })
+      .catch(function () { busyRec = false; btn.disabled = false; btn.textContent = orig; noMic("The microphone is blocked. In Chrome, tap the icon left of the address and allow the microphone. Or record in your recorder app, then tap Pick a recording."); });
+  }
+
+  // ---------- wiring ----------
+  $("matchRec").onclick = function () {
+    var b = $("matchRec"); if (busyRec) return;
+    if (readySounds().length < 2) { updateReady(true); return; }
+    busyRec = true; b.classList.add("live"); $("matchRecLabel").textContent = "Listening";
+    var ring = $("ring");
+    recordMic(function (p, lvl) {
+      ring.style.strokeDashoffset = String(502.65 * (1 - p)); $("level").style.width = (lvl * 100) + "%";
+      $("matchRecSub").textContent = p ? Math.ceil(REC_SEC * (1 - p)) + " s" : REC_SEC + " seconds";
+    }).then(function (blob) { runMatch(function () { return blob; }); })
+      .catch(function () { noMic("The microphone is blocked. In Chrome, tap the icon left of the address and allow the microphone. Or record in your recorder app, then tap Pick a recording."); })
+      .finally(function () { busyRec = false; b.classList.remove("live"); $("matchRecLabel").textContent = "Record"; ring.style.strokeDashoffset = "502.65"; });
+  };
+  function onPick(id) { $(id).onchange = function () { var f = this.files && this.files[0]; this.value = ""; if (f) runMatch(function () { return f; }); }; }
+  onPick("matchFile");
+
+  $("runCheck").onclick = function () {
+    var ready = readySounds(), out = $("checkOut"); out.textContent = "";
+    if (ready.length < 2) { out.appendChild(el("p", "small muted", "Add " + MIN_CLIPS + " clips to at least 2 sounds first.")); return; }
+    var r = CryEngine.check(refsFor(ready)), tb = el("table"), body = el("tbody");
+    ready.forEach(function (s) { var tr = el("tr"), a = el("td"), b = el("td", "mono"); a.textContent = s; a.style.color = color(s);
+      b.textContent = r.perSound[s][0] + " of " + r.perSound[s][1] + " correct"; tr.appendChild(a); tr.appendChild(b); body.appendChild(tr); });
+    tb.appendChild(body); out.appendChild(tb);
+    out.appendChild(el("p", "", "Balanced score: " + Math.round(r.balanced * 100) + "%. Pure chance is " + Math.round(r.chance * 100) + "%."));
+  };
+
+  // Backup: one JSON file with every clip. Import adds clips that are not already here.
+  function b64(u8) { var s = "", CH = 0x8000; for (var i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s); }
+  $("exportBtn").onclick = function () {
+    if (!clips.length) { $("backupStatus").textContent = "There are no clips to export."; return; }
+    var parts = ['{"app":"cry-matcher","version":1,"exported":' + JSON.stringify(new Date().toISOString()) + ',"clips":['];
+    clips.forEach(function (c, i) {
+      parts.push((i ? "," : "") + JSON.stringify({ id: c.id, sound: c.sound, created: c.created, source: c.source, dur: c.dur,
+        pcm16k: b64(new Uint8Array(c.pcm.buffer, c.pcm.byteOffset, c.pcm.byteLength)) }));
+    });
+    parts.push("]}");
+    var name = "cry-matcher-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    var url = URL.createObjectURL(new Blob(parts, { type: "application/json" })), link = document.createElement("a");
+    link.href = url; link.download = name; document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    $("backupStatus").textContent = "Saved " + clips.length + " clips to " + name + " in your Downloads.";
+  };
+  $("importFile").onchange = function () {
+    var f = this.files && this.files[0]; this.value = ""; if (!f) return;
+    var st = $("backupStatus"); st.textContent = "Reading the file";
+    f.text().then(function (t) {
+      var data = JSON.parse(t);
+      if (!data || data.app !== "cry-matcher" || !Array.isArray(data.clips)) throw new Error("bad");
+      var have = {}; clips.forEach(function (c) { have[c.id] = 1; });
+      var todo = data.clips.filter(function (c) { return c && !have[c.id] && SOUNDS.some(function (s) { return s.id === c.sound; }) && typeof c.pcm16k === "string"; });
+      return withModel().then(function (m) {
+        return todo.reduce(function (p, c, i) {
+          return p.then(function () {
+            st.textContent = "Importing " + (i + 1) + " of " + todo.length;
+            var bytes = CryEngine.b64ToBytes(c.pcm16k), pcm = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 1).slice(0);
+            var e = m.embedClip(toFloat(pcm));
+            var clip = { id: String(c.id), sound: c.sound, created: +c.created || Date.now(), source: String(c.source || "import"), dur: pcm.length / 16000, cry: e.cryShare, pcm: pcm, vec: e.vec, ver: MODEL_VER };
+            clips.push(clip); return putClip(clip).catch(function () { idbOk = false; });
+          });
+        }, Promise.resolve()).then(function () { askPersist(); render(); st.textContent = "Imported " + todo.length + " clips. Skipped " + (data.clips.length - todo.length) + " that were already here."; });
+      });
+    }).catch(function () { st.textContent = "This file is not a Cry Matcher backup."; });
+  };
+
+  // ---------- start ----------
+  if (!micAllowed()) noMic("");
+  try { navigator.permissions.query({ name: "microphone" }).then(function (p) { if (p.state === "denied") noMic(""); }, function () {}); } catch (e) {}
+  render();
+  openDB().then(function (d) { idb = d; return loadAll(); }).then(function (rows) { clips = rows; render(); })
+    .catch(function () { idbOk = false; render(); })
+    .then(initModel);
+  if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
+})();
+</script>
+</body>
+</html>
