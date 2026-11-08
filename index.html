@@ -14,7 +14,7 @@
 :root {
   --bg: #eef2f5; --surface: #ffffff; --sunk: #e3e9ee; --ink: #142029; --muted: #566573; --line: #d3dbe2;
   --accent: #19657f; --accent-ink: #ffffff; --warn: #8a5300; --warn-bg: #fff3dc; --bad: #b42318;
-  --s-neh: #c46d1a; --s-owh: #5a5fcf; --s-heh: #b8366f; --s-eairh: #2f8a52; --s-eh: #1f7fae;
+  --s-sound1: #c46d1a; --s-sound2: #5a5fcf; --s-sound3: #b8366f; --s-sound4: #2f8a52; --s-sound5: #1f7fae;
   --f-display: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --f-mono: ui-monospace, "Roboto Mono", monospace;
@@ -23,12 +23,12 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #0c1218; --surface: #141d26; --sunk: #0f171e; --ink: #e4ebf1; --muted: #93a2b0; --line: #24323f;
   --accent: #5bbfd9; --accent-ink: #062530; --warn: #f2b45a; --warn-bg: #2b2112; --bad: #ff7a6b;
-  --s-neh: #f0a25a; --s-owh: #9a9dff; --s-heh: #f07aaa; --s-eairh: #6fd093; --s-eh: #63bfeb;
+  --s-sound1: #f0a25a; --s-sound2: #9a9dff; --s-sound3: #f07aaa; --s-sound4: #6fd093; --s-sound5: #63bfeb;
   color-scheme: dark; } }
 :root[data-theme="dark"] {
   --bg: #0c1218; --surface: #141d26; --sunk: #0f171e; --ink: #e4ebf1; --muted: #93a2b0; --line: #24323f;
   --accent: #5bbfd9; --accent-ink: #062530; --warn: #f2b45a; --warn-bg: #2b2112; --bad: #ff7a6b;
-  --s-neh: #f0a25a; --s-owh: #9a9dff; --s-heh: #f07aaa; --s-eairh: #6fd093; --s-eh: #63bfeb;
+  --s-sound1: #f0a25a; --s-sound2: #9a9dff; --s-sound3: #f07aaa; --s-sound4: #6fd093; --s-sound5: #63bfeb;
   color-scheme: dark; }
 
 * { box-sizing: border-box; }
@@ -49,7 +49,7 @@ header { display: grid; gap: 6px; }
 .chip { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);
   border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; width: fit-content; }
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
-.chip.ok .dot { background: var(--s-eairh); } .chip.err .dot { background: var(--bad); }
+.chip.ok .dot { background: var(--s-sound4); } .chip.err .dot { background: var(--bad); }
 
 button, .btn { font: 700 16px/1 var(--f-body); color: var(--ink); background: var(--sunk); border: 1px solid var(--line);
   border-radius: 12px; min-height: 48px; padding: 0 16px; display: inline-flex; align-items: center; justify-content: center;
@@ -72,7 +72,7 @@ button:focus-visible, .btn:focus-within, input:focus-visible { outline: 3px soli
 .bigrec .sub { font: 400 13px/1.2 var(--f-body); opacity: .85; }
 .bigrec.live { background: var(--bad); color: #fff; }
 .level { width: 152px; height: 6px; border-radius: 3px; background: var(--sunk); overflow: hidden; }
-.level i { display: block; height: 100%; width: 0; background: var(--s-eairh); transition: width .08s linear; }
+.level i { display: block; height: 100%; width: 0; background: var(--s-sound4); transition: width .08s linear; }
 .status { min-height: 1.5em; text-align: center; }
 .note { background: var(--warn-bg); color: var(--warn); border-radius: 10px; padding: 10px 12px; font-size: 15px; }
 .result { display: grid; gap: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
@@ -89,6 +89,7 @@ button:focus-visible, .btn:focus-within, input:focus-visible { outline: 3px soli
 
 /* Library */
 .sounds { display: grid; gap: 14px; }
+.linkbtn { background: none; border: 0; padding: 0; min-height: 0; color: var(--accent); text-decoration: underline; cursor: pointer; font: inherit; justify-self: start; }
 .sound { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px; display: grid; gap: 12px; }
 .shead { display: flex; align-items: center; gap: 12px; }
 .swatch { width: 14px; height: 40px; border-radius: 7px; flex: none; }
@@ -124,7 +125,7 @@ body:not(.no-mic) .no-mic-only { display: none !important; }
 .logrow { display: grid; grid-template-columns: 1fr auto 44px; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 6px; }
 .logrow .when { font-size: 13px; color: var(--muted); }
 .logrow select { font: 600 15px var(--f-body); min-height: 44px; border-radius: 10px; border: 1px solid var(--line); background: var(--sunk); color: var(--ink); padding: 0 8px; }
-.mark { font-weight: 700; } .mark.ok { color: var(--s-eairh); } .mark.bad { color: var(--bad); }
+.mark { font-weight: 700; } .mark.ok { color: var(--s-sound4); } .mark.bad { color: var(--bad); }
 .logrow button { width: 44px; min-height: 44px; padding: 0; }
 .logrow button.arm { background: var(--bad); color: #fff; font-size: 12px; }
 th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; padding-bottom: 4px; } th:last-child { text-align: right; }
@@ -216,9 +217,15 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
 <script>
 (function () {
   "use strict";
-  var SOUNDS = [
-    { id: "neh", gloss: "hungry" }, { id: "owh", gloss: "sleepy" }, { id: "heh", gloss: "discomfort" },
-    { id: "eairh", gloss: "lower gas" }, { id: "eh", gloss: "burp" }];
+  var SOUNDS = [{ id: "sound1" }, { id: "sound2" }, { id: "sound3" }, { id: "sound4" }, { id: "sound5" }];
+  // Older versions of this page stored other short ids. They are mapped to the new ids when read.
+  var LEGACY = { neh: "sound1", owh: "sound2", heh: "sound3", eairh: "sound4", eh: "sound5" };
+  function mig(x) { return typeof x === "string" && LEGACY.hasOwnProperty(x) ? LEGACY[x] : x; }
+  // Display names: "Sound 1" to "Sound 5" unless you rename them. Kept in this browser and in the backup file.
+  var names = {};
+  try { names = JSON.parse(localStorage.getItem("cm-names") || "{}") || {}; } catch (e) { names = {}; }
+  function saveNames() { try { localStorage.setItem("cm-names", JSON.stringify(names)); } catch (e) {} }
+  function label(id) { return id === "unsure" ? "Not sure" : (names[id] || ("Sound " + id.replace("sound", ""))); }
   var MIN_CLIPS = 3, MAX_SEC = 15, REC_SEC = 5, MODEL_VER = 1;
   var $ = function (id) { return document.getElementById(id); };
   var clips = [];            // {id, sound, created, source, dur, cry, pcm(Int16Array), vec(Float32Array), ver}
@@ -249,7 +256,7 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
   }
   function toRow(c) { return { id: c.id, sound: c.sound, created: c.created, source: c.source, dur: c.dur, cry: c.cry,
     ver: c.ver, pcm: c.pcm.buffer.slice(0), vec: c.vec.buffer.slice(0) }; }
-  function fromRow(r) { return { id: r.id, sound: r.sound, created: r.created, source: r.source, dur: r.dur, cry: r.cry,
+  function fromRow(r) { return { id: r.id, sound: mig(r.sound), old: r.sound !== mig(r.sound), created: r.created, source: r.source, dur: r.dur, cry: r.cry,
     ver: r.ver, pcm: new Int16Array(r.pcm), vec: new Float32Array(r.vec) }; }
   function putClip(c) { return idbOk ? tx("readwrite", function (s) { return s.put(toRow(c)); }) : Promise.resolve(); }
   function delClip(id) { return idbOk ? tx("readwrite", function (s) { return s.delete(id); }) : Promise.resolve(); }
@@ -258,7 +265,17 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
   function putLog(e) { return idbOk ? tx("readwrite", function (s) { return s.put(e); }, "log") : Promise.resolve(); }
   function delLog(id) { return idbOk ? tx("readwrite", function (s) { return s.delete(id); }, "log") : Promise.resolve(); }
   function loadLog() { return tx("readonly", function (s) { return s.getAll(); }, "log").then(function (r) { return r || []; }); }
-  function loadAll() { return tx("readonly", function (s) { return s.getAll(); }).then(function (rows) { return (rows || []).map(fromRow); }); }
+  function loadAll() { return tx("readonly", function (s) { return s.getAll(); }).then(function (rows) {
+    var out = (rows || []).map(fromRow);
+    out.forEach(function (c) { if (c.old) { delete c.old; putClip(c).catch(function () {}); } });
+    return out; }); }
+  function migLog(e) {
+    var before = JSON.stringify([e.predicted, e.actual, e.inMatch, e.scores && Object.keys(e.scores)]);
+    e.predicted = mig(e.predicted); e.actual = e.actual === "unsure" ? e.actual : (e.actual ? mig(e.actual) : null);
+    e.inMatch = Array.isArray(e.inMatch) ? e.inMatch.map(mig) : [];
+    var sc = {}; Object.keys(e.scores || {}).forEach(function (k) { sc[mig(k)] = e.scores[k]; }); e.scores = sc;
+    return before !== JSON.stringify([e.predicted, e.actual, e.inMatch, Object.keys(e.scores)]);
+  }
 
   function askPersist() {
     try { if (navigator.storage && navigator.storage.persist) return navigator.storage.persist().catch(function () { return false; }); } catch (e) {}
@@ -402,7 +419,6 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
   function count(id) { return clips.filter(function (c) { return c.sound === id; }).length; }
   function refsFor(ready) { return clips.filter(function (c) { return ready.indexOf(c.sound) >= 0; }).map(function (c) { return { sound: c.sound, vec: c.vec }; }); }
   function color(id) { return "var(--s-" + id + ")"; }
-  function gloss(id) { return SOUNDS.filter(function (s) { return s.id === id; })[0].gloss; }
 
   function runMatch(getBlob) {
     var ready = readySounds();
@@ -416,19 +432,19 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
     var ranked = CryEngine.match(a.vec, refsFor(ready));
     lastMatch = a; lastMatch.saved = false;
     var best = ranked[0], second = ranked[1], lead = best.score - second.score;
-    $("verdictName").textContent = best.sound; $("verdictName").style.color = color(best.sound);
+    $("verdictName").textContent = label(best.sound); $("verdictName").style.color = color(best.sound);
     $("verdictSub").innerHTML = "";
-    $("verdictSub").textContent = "Your label: " + gloss(best.sound) + ". Lead over " + second.sound + ": " + lead.toFixed(2) + ".";
+    $("verdictSub").textContent = "Lead over " + label(second.sound) + ": " + lead.toFixed(2) + ".";
     var warn = [];
     if (a.cry === 0) warn.push("No crying was heard in this clip. The result may mean nothing.");
     if (lead < 0.05) warn.push("Low confidence: the top two sounds are almost equal.");
     if (a.quiet) warn.push("The clip is very quiet. Hold the phone closer.");
-    var missing = SOUNDS.filter(function (s) { return ready.indexOf(s.id) < 0; }).map(function (s) { return s.id; });
+    var missing = SOUNDS.filter(function (s) { return ready.indexOf(s.id) < 0; }).map(function (s) { return label(s.id); });
     if (missing.length) warn.push("Not in this match (fewer than " + MIN_CLIPS + " clips): " + missing.join(", ") + ".");
     $("resultWarn").hidden = !warn.length; $("resultWarn").textContent = warn.join(" ");
     var bars = $("bars"); bars.textContent = "";
     ranked.forEach(function (r) {
-      var row = el("div", "bar"), name = el("b", "", r.sound), tr = el("div", "track"), fill = el("i"), v = el("span", "v mono", r.score.toFixed(2));
+      var row = el("div", "bar"), name = el("b", "", label(r.sound)), tr = el("div", "track"), fill = el("i"), v = el("span", "v mono", r.score.toFixed(2));
       name.style.color = color(r.sound);
       fill.style.width = Math.max(2, (r.score + 1) * 50) + "%"; fill.style.background = color(r.sound);
       tr.appendChild(fill); row.appendChild(name); row.appendChild(tr); row.appendChild(v); bars.appendChild(row);
@@ -439,18 +455,18 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
     log.push(entry); putLog(entry).catch(function () { idbOk = false; }); renderLog();
     var row = $("answerRow"); row.textContent = ""; $("answerStatus").textContent = ""; $("addRef").hidden = true; $("keepAudio").checked = false;
     SOUNDS.map(function (s) { return s.id; }).concat(["unsure"]).forEach(function (id) {
-      var b = el("button", "", id === "unsure" ? "Not sure / nothing worked" : id); b.type = "button";
+      var b = el("button", "", id === "unsure" ? "Not sure / nothing worked" : label(id)); b.type = "button";
       if (id !== "unsure") b.style.color = color(id); else b.style.flexBasis = "100%";
       b.onclick = function () {
         if (log.indexOf(entry) < 0) log.push(entry);
         entry.actual = id; putLog(entry).catch(function () {}); renderLog();
         [].forEach.call(row.children, function (x) { x.classList.toggle("on", x === b); });
         $("answerStatus").textContent = id === "unsure" ? "Saved as not sure. It does not count as right or wrong."
-          : id === entry.predicted ? "Saved. Right: the page said " + entry.predicted + "." : "Saved. Wrong: the page said " + entry.predicted + ".";
+          : id === entry.predicted ? "Saved. Right: the page said " + label(entry.predicted) + "." : "Saved. Wrong: the page said " + label(entry.predicted) + ".";
         var ar = $("addRef");
         if (id === "unsure") { ar.hidden = true; return; }
-        ar.hidden = false; ar.disabled = !!a.addedAs; ar.textContent = a.addedAs ? "Added to " + a.addedAs + " references" : "Also add this clip to " + id + " references";
-        ar.onclick = function () { if (a.addedAs) return; a.addedAs = id; ar.disabled = true; addClip(id, a, "match").then(function () { ar.textContent = "Added to " + id + " references"; }); };
+        ar.hidden = false; ar.disabled = !!a.addedAs; ar.textContent = a.addedAs ? "Added to " + label(a.addedAs) + " references" : "Also add this clip to " + label(id) + " references";
+        ar.onclick = function () { if (a.addedAs) return; a.addedAs = id; ar.disabled = true; addClip(id, a, "match").then(function () { ar.textContent = "Added to " + label(id) + " references"; }); };
       };
       row.appendChild(b);
     });
@@ -480,7 +496,7 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
       tb.appendChild(th);
       SOUNDS.forEach(function (s) {
         var es = judged.filter(function (e) { return e.actual === s.id; }); if (!es.length) return;
-        var tr = el("tr"), a = el("td", "", s.id); a.style.color = color(s.id);
+        var tr = el("tr"), a = el("td", "", label(s.id)); a.style.color = color(s.id);
         tr.appendChild(a); tr.appendChild(el("td", "mono", String(es.length)));
         tr.appendChild(el("td", "mono", es.filter(isRight).length + " of " + es.length)); tb.appendChild(tr);
       });
@@ -493,11 +509,11 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
     (showAllLog ? rows : rows.slice(0, 10)).forEach(function (e) {
       var r = el("div", "logrow"), left = el("div"), sel = el("select"), del = el("button");
       left.appendChild(el("div", "when", fmtTime(e.time) + (e.cryHeard ? "" : " · no crying heard") + (e.pcm ? " · audio kept" : "")));
-      var p = el("div"); p.appendChild(document.createTextNode("Page: ")); var pb = el("b", "", e.predicted); pb.style.color = color(e.predicted); p.appendChild(pb);
+      var p = el("div"); p.appendChild(document.createTextNode("Page: ")); var pb = el("b", "", label(e.predicted)); pb.style.color = color(e.predicted); p.appendChild(pb);
       var ok = isRight(e); if (ok !== null) { p.appendChild(document.createTextNode(" ")); p.appendChild(el("span", "mark " + (ok ? "ok" : "bad"), ok ? "Right" : "Wrong")); }
       left.appendChild(p);
       sel.setAttribute("aria-label", "What calmed the baby");
-      [["", "Answer?"]].concat(SOUNDS.map(function (s) { return [s.id, s.id]; }), [["unsure", "Not sure"]]).forEach(function (o) {
+      [["", "Answer?"]].concat(SOUNDS.map(function (s) { return [s.id, label(s.id)]; }), [["unsure", "Not sure"]]).forEach(function (o) {
         var op = el("option", "", o[1]); op.value = o[0]; if ((e.actual || "") === o[0]) op.selected = true; sel.appendChild(op); });
       sel.onchange = function () { e.actual = sel.value || null; putLog(e).catch(function () {}); renderLog(); };
       del.type = "button"; del.innerHTML = ICON.del; del.setAttribute("aria-label", "Delete result");
@@ -535,7 +551,7 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
     var ready = readySounds(), n = $("readyNote");
     if (ready.length >= 2) { n.hidden = true; return; }
     n.hidden = false;
-    n.textContent = "To match, add " + MIN_CLIPS + " clips to at least 2 sounds below. Sounds ready now: " + (ready.length ? ready.join(", ") : "none") + ".";
+    n.textContent = "To match, add " + MIN_CLIPS + " clips to at least 2 sounds below. Sounds ready now: " + (ready.length ? ready.map(label).join(", ") : "none") + ".";
     if (flash) n.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
@@ -563,7 +579,15 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
       var mine = clips.filter(function (c) { return c.sound === s.id; }).sort(function (a, b) { return b.created - a.created; });
       var card = el("div", "sound"), head = el("div", "shead"), sw = el("span", "swatch"), t = el("div", "t");
       sw.style.background = color(s.id);
-      var nm = el("b", "", s.id); nm.style.color = color(s.id); t.appendChild(nm); t.appendChild(el("span", "small muted", "Your label: " + s.gloss));
+      var nm = el("b", "", label(s.id)); nm.style.color = color(s.id); t.appendChild(nm);
+      var rn = el("button", "linkbtn small", "Rename"); rn.type = "button";
+      rn.onclick = function () {
+        var v = window.prompt("Name for " + label(s.id) + " (for example, what you think it means). Leave empty for the default.", names[s.id] || "");
+        if (v === null) return; v = v.trim().slice(0, 24);
+        if (v) names[s.id] = v; else delete names[s.id];
+        saveNames(); render(); renderLog();
+      };
+      t.appendChild(rn);
       var cnt = el("div", "count"); cnt.style.color = mine.length >= MIN_CLIPS ? color(s.id) : "";
       for (var k = 0; k < MIN_CLIPS; k++) cnt.appendChild(el("i", k < mine.length ? "on" : ""));
       cnt.appendChild(el("span", "", mine.length + (mine.length === 1 ? " clip" : " clips")));
@@ -636,7 +660,7 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
     var ready = readySounds(), out = $("checkOut"); out.textContent = "";
     if (ready.length < 2) { out.appendChild(el("p", "small muted", "Add " + MIN_CLIPS + " clips to at least 2 sounds first.")); return; }
     var r = CryEngine.check(refsFor(ready)), tb = el("table"), body = el("tbody");
-    ready.forEach(function (s) { var tr = el("tr"), a = el("td"), b = el("td", "mono"); a.textContent = s; a.style.color = color(s);
+    ready.forEach(function (s) { var tr = el("tr"), a = el("td"), b = el("td", "mono"); a.textContent = label(s); a.style.color = color(s);
       b.textContent = r.perSound[s][0] + " of " + r.perSound[s][1] + " correct"; tr.appendChild(a); tr.appendChild(b); body.appendChild(tr); });
     tb.appendChild(body); out.appendChild(tb);
     out.appendChild(el("p", "", "Balanced score: " + Math.round(r.balanced * 100) + "%. Pure chance is " + Math.round(r.chance * 100) + "%."));
@@ -646,7 +670,7 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
   function b64(u8) { var s = "", CH = 0x8000; for (var i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s); }
   $("exportBtn").onclick = function () {
     if (!clips.length && !log.length) { $("backupStatus").textContent = "There is nothing to export."; return; }
-    var parts = ['{"app":"cry-matcher","version":2,"exported":' + JSON.stringify(new Date().toISOString()) + ',"clips":['];
+    var parts = ['{"app":"cry-matcher","version":2,"exported":' + JSON.stringify(new Date().toISOString()) + ',"names":' + JSON.stringify(names) + ',"clips":['];
     clips.forEach(function (c, i) {
       parts.push((i ? "," : "") + JSON.stringify({ id: c.id, sound: c.sound, created: c.created, source: c.source, dur: c.dur,
         pcm16k: b64(new Uint8Array(c.pcm.buffer, c.pcm.byteOffset, c.pcm.byteLength)) }));
@@ -670,6 +694,12 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
       if (!data || data.app !== "cry-matcher" || !Array.isArray(data.clips)) throw new Error("bad");
       var have = {}; clips.forEach(function (c) { have[c.id] = 1; });
       var haveLog = {}; log.forEach(function (e) { haveLog[e.id] = 1; });
+      if (data.names && typeof data.names === "object") SOUNDS.forEach(function (s) { var v = data.names[mig(s.id)] || data.names[s.id];
+        if (!names[s.id] && typeof v === "string" && v.trim()) names[s.id] = v.trim().slice(0, 24); });
+      Object.keys(LEGACY).forEach(function (k) { if (data.names && typeof data.names[k] === "string" && !names[LEGACY[k]]) names[LEGACY[k]] = data.names[k].trim().slice(0, 24); });
+      saveNames();
+      (Array.isArray(data.log) ? data.log : []).forEach(function (e) { if (e && typeof e === "object") migLog(e); });
+      data.clips.forEach(function (c) { if (c && typeof c === "object") c.sound = mig(c.sound); });
       var newLog = (Array.isArray(data.log) ? data.log : []).filter(function (e) { return e && e.id && !haveLog[e.id] && isSound(e.predicted); }).map(function (e) {
         var o = { id: String(e.id), time: +e.time || Date.now(), predicted: e.predicted, lead: +e.lead || 0, scores: e.scores || {}, inMatch: Array.isArray(e.inMatch) ? e.inMatch : [],
           cryHeard: !!e.cryHeard, quiet: !!e.quiet, actual: isSound(e.actual) || e.actual === "unsure" ? e.actual : null };
@@ -698,7 +728,7 @@ th { text-align: left; font-size: 13px; color: var(--muted); font-weight: 400; p
   try { navigator.permissions.query({ name: "microphone" }).then(function (p) { if (p.state === "denied") noMic(""); }, function () {}); } catch (e) {}
   render();
   renderLog();
-  openDB().then(function (d) { idb = d; return loadAll(); }).then(function (rows) { clips = rows; render(); return loadLog(); }).then(function (l) { log = l; renderLog(); })
+  openDB().then(function (d) { idb = d; return loadAll(); }).then(function (rows) { clips = rows; render(); return loadLog(); }).then(function (l) { log = l; log.forEach(function (e) { if (migLog(e)) putLog(e).catch(function () {}); }); renderLog(); })
     .catch(function () { idbOk = false; render(); })
     .then(initModel);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
