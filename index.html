@@ -440,13 +440,9 @@ details.tips li { margin-bottom: 6px; }
 <script>
 (function () {
   "use strict";
-  // Older versions of this page stored other short ids. They are mapped to the current ids when read.
-  var LEGACY = { neh: "sound1", owh: "sound2", heh: "sound3", eairh: "sound4", eh: "sound5" };
-  function mig(x) { return typeof x === "string" && LEGACY.hasOwnProperty(x) ? LEGACY[x] : x; }
-  // Default needs. The ids stay the same as before, so saved clips keep their place (position 1 = Hungry, and so on).
+  // Default baby needs. You can rename, add and remove them.
   var DEFAULTS = [["sound1", "Hungry"], ["sound2", "Tired"], ["sound3", "Burp or gas"], ["sound4", "Discomfort"], ["sound5", "Pain"]];
-  var DEFAULT_NAME = {}; DEFAULTS.forEach(function (d) { DEFAULT_NAME[d[0]] = d[1]; });
-  var MIN_CLIPS = 3, MAX_SEC = 15, REC_SEC = 5, MODEL_VER = 1, MAX_NEEDS = 8;
+  var MIN_CLIPS = 3, MAX_SEC = 15, REC_SEC = 5, MAX_NEEDS = 8;
   var $ = function (id) { return document.getElementById(id); };
 
   function store(k, v) { try { if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
@@ -455,24 +451,21 @@ details.tips li { margin-bottom: 6px; }
   function clean(s) { return typeof s === "string" ? s.trim().slice(0, 24) : ""; }
 
   // Needs: [{id, name, c}] where c is the colour slot (0 to 7). Kept in this browser and in the backup file.
-  var needs = (function () {
-    var n = jsonGet("cm-needs", null);
-    if (Array.isArray(n)) n = n.filter(function (x) { return x && typeof x.id === "string" && clean(x.name); })
-      .map(function (x, i) { return { id: x.id, name: clean(x.name), c: isFinite(x.c) ? Math.abs(Math.floor(x.c)) % 8 : i % 8 }; });
-    if (Array.isArray(n) && n.length) return n.slice(0, MAX_NEEDS);
-    var old = jsonGet("cm-names", {}) || {};   // names you gave in an earlier version stay
-    return DEFAULTS.map(function (d, i) { return { id: d[0], name: clean(old[d[0]]) || d[1], c: i }; });
-  })();
+  function cleanNeeds(n) {
+    return (Array.isArray(n) ? n : []).filter(function (x) { return x && typeof x.id === "string" && clean(x.name); })
+      .map(function (x, i) { return { id: x.id, name: clean(x.name), c: isFinite(x.c) ? Math.abs(Math.floor(x.c)) % 8 : i % 8 }; }).slice(0, MAX_NEEDS);
+  }
+  var needs = cleanNeeds(jsonGet("cm-needs", null));
+  if (!needs.length) needs = DEFAULTS.map(function (d, i) { return { id: d[0], name: d[1], c: i }; });
   function saveNeeds() { store("cm-needs", JSON.stringify(needs)); }
   saveNeeds();
   function need(id) { for (var i = 0; i < needs.length; i++) if (needs[i].id === id) return needs[i]; return null; }
   function isSound(x) { return !!need(x); }
   function label(id) { if (id === "unsure") return "Not sure"; var n = need(id); return n ? n.name : "Removed baby need"; }
   function color(id) { var n = need(id); return n ? "var(--n" + n.c + ")" : "var(--outline)"; }
-  function nameMap() { var o = {}; needs.forEach(function (n) { o[n.id] = n.name; }); return o; }
   function freeColor() { for (var c = 0; c < 8; c++) if (!needs.some(function (n) { return n.c === c; })) return c; return needs.length % 8; }
 
-  var clips = [];            // {id, sound, created, source, dur, cry, pcm(Int16Array), vec(Float32Array), ver}
+  var clips = [];            // {id, sound, created, source, dur, cry, pcm(Int16Array), vec(Float32Array)}
   var model = null, modelWait = [], idb = null, idbOk = true;
 
   // ---------- storage (IndexedDB, this device only) ----------
@@ -499,9 +492,9 @@ details.tips li { margin-bottom: 6px; }
     });
   }
   function toRow(c) { return { id: c.id, sound: c.sound, created: c.created, source: c.source, dur: c.dur, cry: c.cry,
-    ver: c.ver, pcm: c.pcm.buffer.slice(0), vec: c.vec.buffer.slice(0) }; }
-  function fromRow(r) { return { id: r.id, sound: mig(r.sound), old: r.sound !== mig(r.sound), created: r.created, source: r.source, dur: r.dur, cry: r.cry,
-    ver: r.ver, pcm: new Int16Array(r.pcm), vec: new Float32Array(r.vec) }; }
+    pcm: c.pcm.buffer.slice(0), vec: c.vec.buffer.slice(0) }; }
+  function fromRow(r) { return { id: r.id, sound: r.sound, created: r.created, source: r.source, dur: r.dur, cry: r.cry,
+    pcm: new Int16Array(r.pcm), vec: new Float32Array(r.vec) }; }
   function putClip(c) { return idbOk ? tx("readwrite", function (s) { return s.put(toRow(c)); }) : Promise.resolve(); }
   function delClip(id) { return idbOk ? tx("readwrite", function (s) { return s.delete(id); }) : Promise.resolve(); }
   // Result log: one row per match. {id, time, predicted, lead, scores, inMatch, cryHeard, quiet, actual, pcm?}
@@ -509,17 +502,7 @@ details.tips li { margin-bottom: 6px; }
   function putLog(e) { return idbOk ? tx("readwrite", function (s) { return s.put(e); }, "log") : Promise.resolve(); }
   function delLog(id) { return idbOk ? tx("readwrite", function (s) { return s.delete(id); }, "log") : Promise.resolve(); }
   function loadLog() { return tx("readonly", function (s) { return s.getAll(); }, "log").then(function (r) { return r || []; }); }
-  function loadAll() { return tx("readonly", function (s) { return s.getAll(); }).then(function (rows) {
-    var out = (rows || []).map(fromRow);
-    out.forEach(function (c) { if (c.old) { delete c.old; putClip(c).catch(function () {}); } });
-    return out; }); }
-  function migLog(e) {
-    var before = JSON.stringify([e.predicted, e.actual, e.inMatch, e.scores && Object.keys(e.scores)]);
-    e.predicted = mig(e.predicted); e.actual = e.actual === "unsure" ? e.actual : (e.actual ? mig(e.actual) : null);
-    e.inMatch = Array.isArray(e.inMatch) ? e.inMatch.map(mig) : [];
-    var sc = {}; Object.keys(e.scores || {}).forEach(function (k) { sc[mig(k)] = e.scores[k]; }); e.scores = sc;
-    return before !== JSON.stringify([e.predicted, e.actual, e.inMatch, Object.keys(e.scores)]);
-  }
+  function loadAll() { return tx("readonly", function (s) { return s.getAll(); }).then(function (rows) { return (rows || []).map(fromRow); }); }
   function askPersist() {
     try { if (navigator.storage && navigator.storage.persist) return navigator.storage.persist().catch(function () { return false; }); } catch (e) {}
     return Promise.resolve(false);
@@ -613,17 +596,11 @@ details.tips li { margin-bottom: 6px; }
       model.embedClip(new Float32Array(16000));
       chip.classList.add("ok"); $("modelText").textContent = "Model ready";
       modelWait.splice(0).forEach(function (r) { r(model); });
-      return refreshOld();
     }).catch(function (e) { fail("The sound model did not load. Reload the page. (" + (e && e.message || e) + ")"); });
     function fail(m) { chip.classList.add("err"); $("modelText").textContent = "Model error"; setStatus("matchStatus", m, true); }
   }
   function loadScript(src) {
     return new Promise(function (res, rej) { var s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = function () { rej(new Error("could not load " + src)); }; document.body.appendChild(s); });
-  }
-  function refreshOld() {
-    var old = clips.filter(function (c) { return c.ver !== MODEL_VER; });
-    return old.reduce(function (p, c) { return p.then(function () { var e = model.embedClip(toFloat(c.pcm)); c.vec = e.vec; c.cry = e.cryShare; c.ver = MODEL_VER; return putClip(c); }); }, Promise.resolve())
-      .then(function () { if (old.length) render(); });
   }
 
   // ---------- small UI helpers ----------
@@ -669,7 +646,7 @@ details.tips li { margin-bottom: 6px; }
       ok.onclick = function () { done(inp.hidden ? true : inp.value); };
       $("dlgCancel").onclick = function () { done(null); };
       d.onclick = function (e) { if (e.target === d) done(null); };
-      inp.onkeydown = function (e) { if (e.key === "Enter") done(inp.value); };
+      inp.onkeydown = function (e) { if (e.key === "Enter") { e.preventDefault(); done(inp.value); } };   // preventDefault: the Enter must not also press the button that gets focus back
       d.onkeydown = function (e) { if (e.key === "Escape") done(null); };
     });
   }
@@ -699,7 +676,7 @@ details.tips li { margin-bottom: 6px; }
   }
   function addClip(sound, a, source) {
     var c = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), sound: sound, created: Date.now(), source: source,
-      dur: a.dur, cry: a.cry, pcm: toInt16(a.wave), vec: a.vec, ver: MODEL_VER };
+      dur: a.dur, cry: a.cry, pcm: toInt16(a.wave), vec: a.vec };
     clips.push(c);
     return putClip(c).catch(function () { idbOk = false; }).then(function () { if (clips.length === 1) return askPersist(); })
       .then(function () { render(); return c; });
@@ -1048,7 +1025,7 @@ details.tips li { margin-bottom: 6px; }
   function b64(u8) { var s = "", CH = 0x8000; for (var i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(s); }
   $("exportBtn").onclick = function () {
     if (!clips.length && !log.length) { setStatus("backupStatus", "There is nothing to export yet.", true); return; }
-    var parts = ['{"app":"cry-matcher","version":2,"exported":' + JSON.stringify(new Date().toISOString()) + ',"needs":' + JSON.stringify(needs) + ',"names":' + JSON.stringify(nameMap()) + ',"clips":['];
+    var parts = ['{"app":"cry-matcher","version":2,"exported":' + JSON.stringify(new Date().toISOString()) + ',"needs":' + JSON.stringify(needs) + ',"clips":['];
     clips.forEach(function (c, i) {
       parts.push((i ? "," : "") + JSON.stringify({ id: c.id, sound: c.sound, created: c.created, source: c.source, dur: c.dur,
         pcm16k: b64(new Uint8Array(c.pcm.buffer, c.pcm.byteOffset, c.pcm.byteLength)) }));
@@ -1078,18 +1055,12 @@ details.tips li { margin-bottom: 6px; }
       if (!data || data.app !== "cry-matcher" || !Array.isArray(data.clips)) throw new Error("bad");
       var have = {}; clips.forEach(function (c) { have[c.id] = 1; });
       var haveLog = {}; log.forEach(function (e) { haveLog[e.id] = 1; });
-      // Needs from the file that are not here yet are added (up to 8 needs).
-      (Array.isArray(data.needs) ? data.needs : []).forEach(function (x) {
-        if (!x || typeof x.id !== "string" || !clean(x.name) || need(mig(x.id)) || needs.length >= MAX_NEEDS) return;
-        needs.push({ id: mig(x.id), name: clean(x.name), c: freeColor() });
-      });
-      // Names from older backups: used only where the need still has its default name.
-      var nm = data.names && typeof data.names === "object" ? data.names : {};
-      Object.keys(nm).forEach(function (k) { var s = need(mig(k)), v = clean(nm[k]);
-        if (s && v && DEFAULT_NAME[s.id] === s.name && v !== s.name && !/^Sound \d$/.test(v) && !(Array.isArray(data.needs))) s.name = v; });
+      // On an empty device the backup's baby needs replace the defaults, so your names come back.
+      // Otherwise baby needs from the file that are not here yet are added (up to 8).
+      var fileNeeds = cleanNeeds(data.needs);
+      if (!clips.length && !log.length && fileNeeds.length) needs = fileNeeds;
+      else fileNeeds.forEach(function (x) { if (!need(x.id) && needs.length < MAX_NEEDS) needs.push({ id: x.id, name: x.name, c: freeColor() }); });
       saveNeeds();
-      (Array.isArray(data.log) ? data.log : []).forEach(function (e) { if (e && typeof e === "object") migLog(e); });
-      data.clips.forEach(function (c) { if (c && typeof c === "object") c.sound = mig(c.sound); });
       var newLog = (Array.isArray(data.log) ? data.log : []).filter(function (e) { return e && e.id && !haveLog[e.id] && isSound(e.predicted); }).map(function (e) {
         var o = { id: String(e.id), time: +e.time || Date.now(), predicted: e.predicted, lead: +e.lead || 0, scores: e.scores || {}, inMatch: Array.isArray(e.inMatch) ? e.inMatch : [],
           cryHeard: !!e.cryHeard, quiet: !!e.quiet, actual: isSound(e.actual) || e.actual === "unsure" ? e.actual : null };
@@ -1105,7 +1076,7 @@ details.tips li { margin-bottom: 6px; }
             setStatus("backupStatus", "Importing " + (i + 1) + " of " + todo.length + "…");
             var bytes = CryEngine.b64ToBytes(c.pcm16k), pcm = new Int16Array(bytes.buffer, bytes.byteOffset, bytes.byteLength >> 1).slice(0);
             var e = m.embedClip(toFloat(pcm));
-            var clip = { id: String(c.id), sound: c.sound, created: +c.created || Date.now(), source: String(c.source || "import"), dur: pcm.length / 16000, cry: e.cryShare, pcm: pcm, vec: e.vec, ver: MODEL_VER };
+            var clip = { id: String(c.id), sound: c.sound, created: +c.created || Date.now(), source: String(c.source || "import"), dur: pcm.length / 16000, cry: e.cryShare, pcm: pcm, vec: e.vec };
             clips.push(clip); return putClip(clip).catch(function () { idbOk = false; });
           });
         }, Promise.resolve()).then(function () { askPersist(); renderAll(); setStatus("backupStatus", "Imported " + todo.length + " clips and " + newLog.length + " results. Skipped the ones that were already here."); });
@@ -1153,9 +1124,9 @@ details.tips li { margin-bottom: 6px; }
   try { navigator.permissions.query({ name: "microphone" }).then(function (p) { if (p.state === "denied") noMic(""); }, function () {}); } catch (e) {}
   render();
   renderLog();
-  openDB().then(function (d) { idb = d; return loadAll(); }).then(function (rows) { clips = rows; render(); return loadLog(); }).then(function (l) { log = l; log.forEach(function (e) { if (migLog(e)) putLog(e).catch(function () {}); }); renderLog(); })
+  openDB().then(function (d) { idb = d; return loadAll(); }).then(function (rows) { clips = rows; render(); return loadLog(); }).then(function (l) { log = l; renderLog(); })
     .catch(function () { idbOk = false; render(); })
-    .then(function () { if (!stored("cm-onboard") && !stored("cm-guide") && !clips.length && !log.length) openOnboard(); })
+    .then(function () { if (!stored("cm-onboard") && !clips.length && !log.length) openOnboard(); })
     .then(initModel);
   if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(function () {});
 })();
