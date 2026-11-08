@@ -49,8 +49,8 @@ flowchart TB
 
 ## Features
 
-- Four tabs: **Match**, **Needs**, **Results**, **Settings**. One job per screen.
-- Default needs: Hungry, Tired, Burp or gas, Discomfort, Pain. Rename, add (up to 8) or remove.
+- Four tabs: **Match**, **Baby needs**, **Results**, **Settings**. One job per screen.
+- Default baby needs: Hungry, Tired, Burp or gas, Discomfort, Pain. Rename, add (up to 8) or remove.
 - Record in the app or upload a recording from the phone's recorder app.
 - Result card: most likely need, confidence, next closest, and plain warnings.
 - "What helped?" chips log right or wrong in one tap; "Not sure" does not count.
@@ -71,7 +71,7 @@ flowchart TB
 ## Quick start (Android)
 
 1. Open the website link (in the About box) in Chrome and allow the microphone.
-2. In **Needs**, add 3 or more clips to at least 2 needs.
+2. In **Baby needs**, add 3 or more clips to at least 2 needs.
 3. When the baby cries, open **Match** and tap the big button.
 4. When you know what worked, tap it under **What helped?**. Watch **Results**.
 

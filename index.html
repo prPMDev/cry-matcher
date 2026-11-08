@@ -299,7 +299,7 @@ details.tips li { margin-bottom: 6px; }
 <nav class="nav" aria-label="Main" role="tablist">
   <img class="brand" src="icon-192.png" alt="">
   <button type="button" role="tab" data-tab="match" aria-controls="view-match"><span class="pill"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h2V6H7v12zm4 4h2V2h-2v20zm-8-8h2v-4H3v4zm12 4h2V6h-2v12zm4-8v4h2v-4h-2z"/></svg></span>Match</button>
-  <button type="button" role="tab" data-tab="needs" aria-controls="view-needs"><span class="pill"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 5h-3v5.5a2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1 2.5-2.5c.57 0 1.08.19 1.5.51V5h4v2zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></svg></span>Needs</button>
+  <button type="button" role="tab" data-tab="needs" aria-controls="view-needs"><span class="pill"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 5h-3v5.5a2.5 2.5 0 0 1-5 0 2.5 2.5 0 0 1 2.5-2.5c.57 0 1.08.19 1.5.51V5h4v2zM4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6z"/></svg></span>Baby needs</button>
   <button type="button" role="tab" data-tab="results" aria-controls="view-results"><span class="pill"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9.2h3V19H5zM10.6 5h2.8v14h-2.8zm5.6 8H19v6h-2.8z"/></svg></span>Results</button>
   <button type="button" role="tab" data-tab="settings" aria-controls="view-settings"><span class="pill"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/></svg></span>Settings</button>
 </nav>
@@ -309,10 +309,10 @@ details.tips li { margin-bottom: 6px; }
   <section class="view wide" id="view-match" role="tabpanel" aria-labelledby="matchTitle">
     <header class="topbar"><h1 id="matchTitle">Cry Matcher</h1><span class="modelchip" id="modelChip" role="status"><span class="dot"></span><span id="modelText">Loading model</span></span></header>
     <section class="card setup" id="setupCard" hidden>
-      <h2 class="card-title">Set up your needs first</h2>
-      <p class="small" id="setupText">Add 3 clips to at least 2 needs.</p>
+      <h2 class="card-title">Set up your baby needs first</h2>
+      <p class="small" id="setupText">Add 3 clips to at least 2 baby needs.</p>
       <div class="meter" role="progressbar" aria-label="Setup progress" aria-valuemin="0" aria-valuemax="100" id="setupProg"><i id="setupBar"></i></div>
-      <button type="button" class="btn filled" data-go="needs">Go to Needs</button>
+      <button type="button" class="btn filled" data-go="needs">Go to Baby needs</button>
     </section>
     <div class="two">
       <section class="card hero">
@@ -347,13 +347,13 @@ details.tips li { margin-bottom: 6px; }
 
   <!-- ======== NEEDS ======== -->
   <section class="view wide" id="view-needs" role="tabpanel" aria-labelledby="needsTitle" hidden>
-    <header class="topbar"><h1 id="needsTitle">Needs</h1></header>
-    <p class="lead">Each need has its own reference cries. Add 3 clips to a need to use it in a match.</p>
+    <header class="topbar"><h1 id="needsTitle">Baby needs</h1></header>
+    <p class="lead">Each baby need has its own reference cries. Add 3 clips to a baby need to use it in a match.</p>
     <div class="needlist" id="sounds"></div>
-    <button type="button" class="btn outlined addneed" id="addNeed"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Add a need</button>
+    <button type="button" class="btn outlined addneed" id="addNeed"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>Add a baby need</button>
     <section class="card" id="checkCard">
       <h2 class="card-title">Check your clips</h2>
-      <p class="small muted">Tests each clip against the others. It shows if your needs sound different enough to tell apart.</p>
+      <p class="small muted">Tests each clip against the others. It shows if your baby needs sound different enough to tell apart.</p>
       <button type="button" class="btn tonal" id="runCheck">Run check</button>
       <div id="checkOut"></div>
     </section>
@@ -364,7 +364,7 @@ details.tips li { margin-bottom: 6px; }
     <header class="topbar"><h1 id="resultsTitle">Results</h1></header>
     <div class="two">
       <section class="card" id="scoreOut"></section>
-      <section class="card" id="byNeedCard" hidden><h2 class="card-title">By need</h2><p class="small muted">What really helped, and how often the match said it.</p><div class="bars" id="byNeed"></div></section>
+      <section class="card" id="byNeedCard" hidden><h2 class="card-title">By baby need</h2><p class="small muted">What really helped, and how often the match said it.</p><div class="bars" id="byNeed"></div></section>
     </div>
     <section class="card" id="recentCard" hidden>
       <h2 class="card-title">Recent</h2>
@@ -387,7 +387,7 @@ details.tips li { margin-bottom: 6px; }
     <section class="card">
       <h2 class="card-title">Your data</h2>
       <p class="small muted" id="storeInfo"></p>
-      <button type="button" class="li" id="exportBtn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg><span class="lt"><b>Export backup</b><span>All clips, needs and results in one file</span></span></button>
+      <button type="button" class="li" id="exportBtn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg><span class="lt"><b>Export backup</b><span>All clips, baby needs and results in one file</span></span></button>
       <label class="li"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg><span class="lt"><b>Import backup</b><span>Adds what is not already here</span></span><input type="file" id="importFile" accept="application/json,.json"></label>
       <button type="button" class="li" id="csvBtn"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><span class="lt"><b>Export results (CSV)</b><span>For a spreadsheet</span></span></button>
       <p class="status" id="backupStatus" aria-live="polite"></p>
@@ -399,8 +399,8 @@ details.tips li { margin-bottom: 6px; }
         <ul>
           <li>Hold the phone about 30 cm from the baby.</li>
           <li>Use a quiet room. Turn off the fan or TV if you can.</li>
-          <li>Add clips from different days to each need.</li>
-          <li>Add a clip to a need only when you are sure what helped.</li>
+          <li>Add clips from different days to each baby need.</li>
+          <li>Add a clip to a baby need only when you are sure what helped.</li>
           <li>If the microphone is blocked, record in your recorder app. Then use Pick a recording.</li>
         </ul>
       </details>
@@ -467,7 +467,7 @@ details.tips li { margin-bottom: 6px; }
   saveNeeds();
   function need(id) { for (var i = 0; i < needs.length; i++) if (needs[i].id === id) return needs[i]; return null; }
   function isSound(x) { return !!need(x); }
-  function label(id) { if (id === "unsure") return "Not sure"; var n = need(id); return n ? n.name : "Removed need"; }
+  function label(id) { if (id === "unsure") return "Not sure"; var n = need(id); return n ? n.name : "Removed baby need"; }
   function color(id) { var n = need(id); return n ? "var(--n" + n.c + ")" : "var(--outline)"; }
   function nameMap() { var o = {}; needs.forEach(function (n) { o[n.id] = n.name; }); return o; }
   function freeColor() { for (var c = 0; c < 8; c++) if (!needs.some(function (n) { return n.c === c; })) return c; return needs.length % 8; }
@@ -726,11 +726,11 @@ details.tips li { margin-bottom: 6px; }
     var ready = readySounds(), card = $("setupCard"), ok = ready.length >= 2;
     card.hidden = ok;
     $("matchRec").classList.toggle("wait", !ok);
-    $("recSub").textContent = ok ? REC_SEC + " seconds, close to the baby" : "Set up 2 needs first";
+    $("recSub").textContent = ok ? REC_SEC + " seconds, close to the baby" : "Set up 2 baby needs first";
     if (ok) return;
     var top = needs.map(function (n) { return Math.min(MIN_CLIPS, count(n.id)); }).sort(function (a, b) { return b - a; });
     var have = (top[0] || 0) + (top[1] || 0), pct = Math.round(have / (2 * MIN_CLIPS) * 100);
-    $("setupText").textContent = "Add " + MIN_CLIPS + " clips to at least 2 needs. Ready now: " + ready.length + " of 2.";
+    $("setupText").textContent = "Add " + MIN_CLIPS + " clips to at least 2 baby needs. Ready now: " + ready.length + " of 2.";
     $("setupBar").style.width = pct + "%"; $("setupProg").setAttribute("aria-valuenow", String(pct));
     if (flash) { card.scrollIntoView({ behavior: "smooth", block: "center" }); card.animate && card.animate([{ transform: "scale(1)" }, { transform: "scale(1.02)" }, { transform: "scale(1)" }], 300); }
   }
@@ -971,13 +971,13 @@ details.tips li { margin-bottom: 6px; }
   function openMenu(card, s, n) {
     closeMenu();
     var m = el("div", "menu"); m.setAttribute("role", "menu");
-    var rn = btn("", ICON.edit, "Rename"), rm = btn("danger", ICON.del, "Remove need");
+    var rn = btn("", ICON.edit, "Rename"), rm = btn("danger", ICON.del, "Remove baby need");
     rn.setAttribute("role", "menuitem"); rm.setAttribute("role", "menuitem");
-    rn.onclick = function () { closeMenu(); ask({ title: "Rename need", value: s.name, ok: "Save" }).then(function (v) {
+    rn.onclick = function () { closeMenu(); ask({ title: "Rename baby need", value: s.name, ok: "Save" }).then(function (v) {
       if (v === null) return; v = clean(v); if (!v) { snack("A name is needed."); return; }
       s.name = v; saveNeeds(); renderAll(); snack("Renamed to " + v); }); };
     rm.onclick = function () { closeMenu();
-      if (needs.length <= 2) { snack("Keep at least 2 needs."); return; }
+      if (needs.length <= 2) { snack("Keep at least 2 baby needs."); return; }
       ask({ title: "Remove " + s.name + "?", text: n ? "This also deletes its " + n + " clip" + (n === 1 ? "" : "s") + " from this device. Past results stay." : "Past results stay.", ok: "Remove", danger: true })
         .then(function (yes) { if (!yes) return;
           var gone = clips.filter(function (c) { return c.sound === s.id; });
@@ -989,7 +989,7 @@ details.tips li { margin-bottom: 6px; }
   }
   $("addNeed").onclick = function () {
     if (needs.length >= MAX_NEEDS) return;
-    ask({ title: "Add a need", text: "For example: Too warm, or Wants to be held.", value: "", placeholder: "Name", ok: "Add" }).then(function (v) {
+    ask({ title: "Add a baby need", text: "For example: Too warm, or Wants to be held.", value: "", placeholder: "Name", ok: "Add" }).then(function (v) {
       if (v === null) return; v = clean(v); if (!v) { snack("A name is needed."); return; }
       var s = { id: "n" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), name: v, c: freeColor() };
       needs.push(s); saveNeeds(); renderAll(); snack(v + " added");
@@ -1014,7 +1014,7 @@ details.tips li { margin-bottom: 6px; }
 
   $("runCheck").onclick = function () {
     var ready = readySounds(), out = $("checkOut"); out.textContent = "";
-    if (ready.length < 2) { out.appendChild(el("p", "status err", "Add " + MIN_CLIPS + " clips to at least 2 needs first.")); return; }
+    if (ready.length < 2) { out.appendChild(el("p", "status err", "Add " + MIN_CLIPS + " clips to at least 2 baby needs first.")); return; }
     var r = CryEngine.check(refsFor(ready));
     ready.forEach(function (s) {
       var c = r.perSound[s], row = el("div", "checkrow"), nm = el("span"), m = el("div", "meter"), f = el("i");
@@ -1023,7 +1023,7 @@ details.tips li { margin-bottom: 6px; }
       row.appendChild(nm); row.appendChild(m); row.appendChild(el("span", "mono small muted", c[0] + " of " + c[1])); out.appendChild(row);
     });
     out.appendChild(el("p", "small", "Score: " + Math.round(r.balanced * 100) + "%. Chance: " + Math.round(r.chance * 100) + "%." +
-      (r.balanced > r.chance + 0.15 ? " Your needs sound different. Good." : " Your needs sound alike. Add clearer clips.")));
+      (r.balanced > r.chance + 0.15 ? " Your baby needs sound different. Good." : " Your baby needs sound alike. Add clearer clips.")));
     out.firstChild.style.marginTop = "16px";
   };
 
@@ -1031,7 +1031,7 @@ details.tips li { margin-bottom: 6px; }
   var RING = 552.92;
   $("matchRec").onclick = function () {
     var b = $("matchRec"); if (busyRec) return;
-    if (readySounds().length < 2) { updateSetup(true); snack("Add 3 clips to 2 needs first."); return; }
+    if (readySounds().length < 2) { updateSetup(true); snack("Add 3 clips to 2 baby needs first."); return; }
     if (!model) { snack("The sound model is still loading."); }
     busyRec = true; b.classList.add("live"); $("recLabel").textContent = "Listening…";
     var ring = $("ring"), face = $("recFace"), faceHTML = face.innerHTML;
@@ -1115,8 +1115,8 @@ details.tips li { margin-bottom: 6px; }
 
   // ---------- first-use steps ----------
   var OB = [
-    { icon: ICON.library, t: "Add reference cries", d: "For each need, like Hungry or Tired, add 3 short clips of your baby. Record them, or upload them from your recorder app." },
-    { icon: ICON.mic, t: "Record a cry", d: "On Match, tap the big button. The app finds the closest need. Everything stays on this device." },
+    { icon: ICON.library, t: "Add reference cries", d: "For each baby need, like Hungry or Tired, add 3 short clips of your baby. Record them, or upload them from your recorder app." },
+    { icon: ICON.mic, t: "Record a cry", d: "On Match, tap the big button. The app finds the closest baby need. Everything stays on this device." },
     { icon: ICON.check, t: "Tell it what helped", d: "When the baby calms, tap what worked. Results then shows how often the match was right." }];
   var ob = 0;
   function drawOb() {

@@ -1,6 +1,6 @@
 // Cry Matcher service worker: keeps the app files on the phone so the page works offline.
 // Your clips are not here. They are in the page's own storage (IndexedDB) on this phone.
-const CACHE = "cry-matcher-v5";
+const CACHE = "cry-matcher-v6";
 const FILES = ["./", "index.html", "engine.js", "tf.min.js", "yamnet-weights.js", "manifest.webmanifest",
   "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
 self.addEventListener("install", (e) => {
